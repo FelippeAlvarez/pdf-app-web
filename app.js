@@ -1,0 +1,316 @@
+'use strict';
+/* Interface do app. Fala com o motor via Tauri: invoke('api', {name, payload}).
+   Diálogos de arquivo: invoke('pick_files' | 'pick_folder' | 'reveal'). */
+const T = window.__TAURI__;
+const invoke = (cmd, args) => T.core.invoke(cmd, args);
+const api = (name, payload) => invoke('api', { name, payload });
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const baseName = p => p.split(/[\\/]/).pop();
+const stem = p => baseName(p).replace(/\.pdf$/i, '');
+const dirOf = p => p.slice(0, Math.max(p.lastIndexOf('\\'), p.lastIndexOf('/')));
+const mb = b => b < 1048576 ? Math.max(1, Math.round(b / 1024)) + ' KB' : (b / 1048576).toFixed(2).replace('.', ',') + ' MB';
+const errMsg = e => (e && e.message) ? e.message : String(e);
+
+/* ---------- abas ---------- */
+$$('.tab').forEach(b => b.addEventListener('click', () => {
+  $$('.tab').forEach(x => { x.classList.toggle('active', x === b); x.setAttribute('aria-selected', x === b); });
+  $$('.panel').forEach(p => p.classList.toggle('active', p.id === 'tab-' + b.dataset.tab));
+}));
+
+/* ---------- modal ---------- */
+function modal(title, bodyHtml, buttons) {
+  return new Promise(res => {
+    $('#modal-title').textContent = title;
+    $('#modal-body').innerHTML = bodyHtml;
+    const act = $('#modal-actions'); act.innerHTML = '';
+    buttons.forEach(b => {
+      const el = document.createElement('button');
+      el.textContent = b.label; if (b.primary) el.className = 'primary';
+      el.onclick = () => { const v = b.value; const extra = $('#modal-body input') ? $('#modal-body input').value : null; $('#modal').hidden = true; res({ value: v, input: extra }); };
+      act.appendChild(el);
+    });
+    $('#modal').hidden = false;
+    const f = $('#modal-body input') || act.querySelector('.primary'); if (f) f.focus();
+  });
+}
+
+/* ---------- estado: organizar ---------- */
+const S = { sources: [], entries: [], sel: new Set(), last: null, hist: [], nextId: 1, thumbs: new Map(), outDir: '', busy: false };
+const key = (src, page) => src + ':' + page;
+
+function snapshot() { S.hist.push(JSON.stringify(S.entries)); if (S.hist.length > 100) S.hist.shift(); $('#btn-undo').disabled = false; }
+function undo() {
+  if (!S.hist.length) return;
+  S.entries = JSON.parse(S.hist.pop()); S.sel = new Set([...S.sel].filter(id => S.entries.some(e => e.id === id)));
+  $('#btn-undo').disabled = !S.hist.length; render();
+}
+
+async function openWithPassword(path) {
+  let password = null;
+  for (;;) {
+    try { const info = await api('open_info', { path, password }); return { info, password }; }
+    catch (e) {
+      if (e && e.code === 'password_required' || e && e.code === 'password_wrong') {
+        const r = await modal('PDF protegido por senha',
+          `<p>${esc(baseName(path))}</p>${e.code === 'password_wrong' ? '<p class="msg err">Senha incorreta.</p>' : ''}<input type="password" id="pw" autocomplete="off" aria-label="Senha">`,
+          [{ label: 'Cancelar', value: 'no' }, { label: 'Abrir', value: 'ok', primary: true }]);
+        if (r.value !== 'ok' || !r.input) return null;
+        password = r.input;
+      } else throw e;
+    }
+  }
+}
+
+async function addSource(path, insertAt /* índice na lista de entries ou null */) {
+  const got = await openWithPassword(path); if (!got) return;
+  const { info, password } = got;
+  $('#banner-signed').hidden = !info.signed;
+  if (info.signed) { toast('err', 'Este PDF possui assinatura digital e não pode ser processado.'); return; }
+  const idx = S.sources.length;
+  S.sources.push({ path, password, pages: info.pages, name: baseName(path), form: info.has_form, size: info.size_bytes });
+  const news = Array.from({ length: info.pages }, (_, i) => ({ id: S.nextId++, src: idx, page: i + 1, rot: 0 }));
+  if (insertAt == null) S.entries.push(...news); else S.entries.splice(insertAt, 0, ...news);
+  if (idx === 0) {
+    $('#base-name').value = stem(path) + '_editado';
+    S.outDir = ''; $('#out-dir').value = '';
+  }
+  render();
+}
+
+async function onOpen() {
+  const files = await invoke('pick_files', { multiple: false }); if (!files || !files.length) return;
+  S.sources = []; S.entries = []; S.sel.clear(); S.hist = []; S.thumbs.clear(); $('#btn-undo').disabled = true; $('#result-org').innerHTML = '';
+  await addSource(files[0], null);
+}
+async function onInsert() {
+  const files = await invoke('pick_files', { multiple: false }); if (!files || !files.length) return;
+  snapshot();
+  const selIdx = S.entries.map((e, i) => S.sel.has(e.id) ? i : -1).filter(i => i >= 0);
+  const at = selIdx.length ? Math.max(...selIdx) + 1 : S.entries.length;
+  await addSource(files[0], at);
+}
+
+/* ---------- miniaturas (carga preguiçosa) ---------- */
+const thumbQueue = new Map(); let thumbRunning = false;
+function wantThumb(src, page) {
+  const k = key(src, page); if (S.thumbs.has(k) || thumbQueue.has(k)) return;
+  thumbQueue.set(k, { src, page }); pumpThumbs();
+}
+async function pumpThumbs() {
+  if (thumbRunning) return; thumbRunning = true;
+  try {
+    while (thumbQueue.size) {
+      const first = thumbQueue.values().next().value;
+      // agrupa páginas consecutivas da mesma fonte (até 8)
+      const batch = [first]; thumbQueue.delete(key(first.src, first.page));
+      for (let p = first.page + 1; batch.length < 8; p++) {
+        const k = key(first.src, p); if (!thumbQueue.has(k)) break;
+        batch.push(thumbQueue.get(k)); thumbQueue.delete(k);
+      }
+      const s = S.sources[first.src]; if (!s) continue;
+      try {
+        const imgs = await api('thumbnails', { path: s.path, password: s.password, from: first.page, count: batch.length, dpi: 40 });
+        imgs.forEach((b64, i) => S.thumbs.set(key(first.src, first.page + i), 'data:image/png;base64,' + b64));
+      } catch (e) { batch.forEach(b => S.thumbs.set(key(b.src, b.page), 'err')); }
+      paintThumbs();
+    }
+  } finally { thumbRunning = false; }
+}
+function paintThumbs() {
+  $$('.pcard').forEach(c => {
+    const t = S.thumbs.get(key(+c.dataset.src, +c.dataset.page)); const box = $('.thumb', c);
+    if (t && !box.dataset.done) {
+      box.dataset.done = '1';
+      box.innerHTML = t === 'err' ? '<span class="muted">sem prévia</span>' : `<img alt="" src="${t}">`;
+      const im = $('img', box); if (im) im.style.transform = `rotate(${+c.dataset.rot}deg)`;
+    }
+  });
+}
+
+/* ---------- renderização da grade ---------- */
+function render() {
+  const has = S.entries.length > 0;
+  $('#empty').hidden = has;
+  $$('#btn-insert,#btn-rotl,#btn-rotr,#btn-dup,#btn-del,#btn-all,#btn-run').forEach(b => b.disabled = !has);
+  const grid = $('#grid'); grid.innerHTML = '';
+  S.entries.forEach((e, i) => {
+    const c = document.createElement('div');
+    c.className = 'pcard' + (S.sel.has(e.id) ? ' sel' : '');
+    c.draggable = true; c.tabIndex = 0; c.dataset.id = e.id; c.dataset.src = e.src; c.dataset.page = e.page; c.dataset.rot = e.rot; c.dataset.idx = i;
+    const srcTag = S.sources.length > 1 ? `<span class="tag" title="${esc(S.sources[e.src].name)}">${e.src + 1}</span>` : '';
+    c.innerHTML = `<div class="thumb"><div class="ph"></div></div><div class="lbl"><span>${i + 1}</span><span>${srcTag} p.${e.page}${e.rot ? ' ↻' + ((e.rot % 360) + 360) % 360 + '°' : ''}</span></div>`;
+    c.setAttribute('aria-label', `Posição ${i + 1}, página ${e.page}`);
+    c.addEventListener('click', ev => selectCard(e, ev));
+    c.addEventListener('dragstart', ev => { if (!S.sel.has(e.id)) { S.sel = new Set([e.id]); } c.classList.add('dragging'); ev.dataTransfer.setData('text/plain', 'pages'); ev.dataTransfer.effectAllowed = 'move'; });
+    c.addEventListener('dragend', () => { c.classList.remove('dragging'); clearDrop(); });
+    c.addEventListener('dragover', ev => { ev.preventDefault(); clearDrop(); const r = c.getBoundingClientRect(); c.classList.add(ev.clientX < r.left + r.width / 2 ? 'drop-before' : 'drop-after'); });
+    c.addEventListener('drop', ev => { ev.preventDefault(); const r = c.getBoundingClientRect(); moveSelectedTo(i + (ev.clientX < r.left + r.width / 2 ? 0 : 1)); clearDrop(); });
+    grid.appendChild(c);
+    wantThumb(e.src, e.page);
+  });
+  paintThumbs();
+  const total = S.entries.length;
+  $('#doc-info').textContent = has ? `${S.sources.map(s => s.name).join(' + ')} — ${total} página${total > 1 ? 's' : ''}${S.sel.size ? `, ${S.sel.size} selecionada${S.sel.size > 1 ? 's' : ''}` : ''}` : '';
+  const hasSel = S.sel.size > 0;
+  $$('#btn-rotl,#btn-rotr,#btn-dup,#btn-del').forEach(b => b.disabled = !hasSel);
+  if (!has) $('#btn-undo').disabled = !S.hist.length;
+}
+function clearDrop() { $$('.drop-before,.drop-after').forEach(x => x.classList.remove('drop-before', 'drop-after')); }
+
+function selectCard(e, ev) {
+  const i = S.entries.findIndex(x => x.id === e.id);
+  if (ev.shiftKey && S.last != null) {
+    const a = Math.min(S.last, i), b = Math.max(S.last, i);
+    if (!ev.ctrlKey && !ev.metaKey) S.sel.clear();
+    for (let k = a; k <= b; k++) S.sel.add(S.entries[k].id);
+  } else if (ev.ctrlKey || ev.metaKey) {
+    S.sel.has(e.id) ? S.sel.delete(e.id) : S.sel.add(e.id); S.last = i;
+  } else { S.sel = new Set([e.id]); S.last = i; }
+  render();
+}
+
+function moveSelectedTo(pos) {
+  const moving = S.entries.filter(e => S.sel.has(e.id)); if (!moving.length) return;
+  snapshot();
+  const before = S.entries.slice(0, pos).filter(e => !S.sel.has(e.id));
+  const after = S.entries.slice(pos).filter(e => !S.sel.has(e.id));
+  S.entries = [...before, ...moving, ...after]; render();
+}
+function rotateSel(d) { if (!S.sel.size) return; snapshot(); S.entries.forEach(e => { if (S.sel.has(e.id)) e.rot = (((e.rot + d) % 360) + 360) % 360; }); render(); }
+function deleteSel() {
+  if (!S.sel.size) return;
+  if (S.sel.size >= S.entries.length) { toast('err', 'Não é possível excluir todas as páginas.'); return; }
+  snapshot(); S.entries = S.entries.filter(e => !S.sel.has(e.id)); S.sel.clear(); render();
+}
+function dupSel() {
+  if (!S.sel.size) return; snapshot();
+  const out = []; const newSel = new Set();
+  S.entries.forEach(e => { out.push(e); if (S.sel.has(e.id)) { const c = { ...e, id: S.nextId++ }; out.push(c); newSel.add(c.id); } });
+  S.entries = out; S.sel = newSel; render();
+}
+
+$('#btn-open').onclick = () => onOpen().catch(e => toast('err', errMsg(e)));
+$('#btn-insert').onclick = () => onInsert().catch(e => toast('err', errMsg(e)));
+$('#btn-rotl').onclick = () => rotateSel(-90);
+$('#btn-rotr').onclick = () => rotateSel(90);
+$('#btn-dup').onclick = dupSel;
+$('#btn-del').onclick = deleteSel;
+$('#btn-undo').onclick = undo;
+$('#btn-all').onclick = () => { S.sel = (S.sel.size === S.entries.length) ? new Set() : new Set(S.entries.map(e => e.id)); render(); };
+document.addEventListener('keydown', ev => {
+  if (!$('#tab-org').classList.contains('active') || !$('#modal').hidden) return;
+  if (ev.target.matches('input,select,textarea')) return;
+  if (ev.key === 'Delete') deleteSel();
+  else if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === 'z') { ev.preventDefault(); undo(); }
+  else if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === 'a') { ev.preventDefault(); S.sel = new Set(S.entries.map(e => e.id)); render(); }
+  else if (ev.key.toLowerCase() === 'r') rotateSel(90);
+  else if (ev.key.toLowerCase() === 'l') rotateSel(-90);
+});
+
+/* ---------- saída ---------- */
+$('#split-on').addEventListener('change', syncSplit);
+function syncSplit() { const on = $('#split-on').checked; $('#split-mb').disabled = !on; $$('input[name=oversize]').forEach(r => r.disabled = !on); }
+syncSplit();
+$('#btn-outdir').onclick = async () => { const d = await invoke('pick_folder', {}); if (d) { S.outDir = d; $('#out-dir').value = d; } };
+
+function toast(kind, text, target = '#result-org') {
+  $(target).innerHTML = `<div class="msg ${kind}" role="${kind === 'err' ? 'alert' : 'status'}">${esc(text)}</div>`;
+}
+function setBusy(which, on, text) {
+  const b = $('#busy-' + which); b.hidden = !on; if (text) $('#busy-' + which + '-text').textContent = text;
+  S.busy = on; $('#btn-run').disabled = on || !S.entries.length; $('#btn-ext-run').disabled = on || !extPath;
+}
+
+function buildRequest(onOversize) {
+  const splitOn = $('#split-on').checked;
+  const splitMb = parseFloat(String($('#split-mb').value).replace(',', '.'));
+  return {
+    sources: S.sources.map(s => ({ path: s.path, password: s.password })),
+    entries: S.entries.map(e => ({ src: e.src, page: e.page, rot: e.rot })),
+    compress: $('#compress').value,
+    split_mb: splitOn ? splitMb : null,
+    reserve_kb: parseFloat($('#reserve-kb').value) || 0,
+    on_oversize: onOversize,
+    out_dir: S.outDir || dirOf(S.sources[0].path),
+    base_name: ($('#base-name').value || stem(S.sources[0].path) + '_editado').replace(/[\\/:*?"<>|]/g, '_'),
+  };
+}
+
+async function run() {
+  if (!S.entries.length || S.busy) return;
+  if ($('#split-on').checked) {
+    const v = parseFloat(String($('#split-mb').value).replace(',', '.'));
+    if (!(v > 0)) { toast('err', 'Informe um tamanho máximo maior que zero.'); return; }
+  }
+  const forms = S.sources.filter(s => s.form);
+  if (forms.length) {
+    const r = await modal('Formulários e links', `<p>${forms.map(s => esc(s.name)).join(', ')} contém campos de formulário. Ao reorganizar, os campos e os links internos são removidos (o texto preenchido permanece só se estiver na própria página). Continuar?</p>`,
+      [{ label: 'Cancelar', value: 'no' }, { label: 'Continuar', value: 'ok', primary: true }]);
+    if (r.value !== 'ok') return;
+  }
+  let policy = $('input[name=oversize]:checked').value;
+  for (;;) {
+    setBusy('org', true, 'Processando… PDFs grandes podem levar alguns minutos.');
+    $('#result-org').innerHTML = '';
+    let res;
+    try { res = await api('process', buildRequest(policy)); }
+    catch (e) { setBusy('org', false); toast('err', errMsg(e)); return; }
+    setBusy('org', false);
+    if (res.status === 'needs_decision') {
+      const list = res.oversize.map(o => `<li>página ${o.page}: ${o.mb.toFixed(2).replace('.', ',')} MB</li>`).join('');
+      const btns = [{ label: 'Cancelar', value: 'cancel' }];
+      if (res.can_escalate) btns.push({ label: 'Aumentar compactação', value: 'escalate', primary: true });
+      btns.push({ label: 'Gerar mesmo assim', value: 'proceed' });
+      const r = await modal('Página maior que o limite',
+        `<p>Estas páginas, sozinhas, passam do tamanho máximo escolhido${res.level_tried ? ` (compactação ${esc(res.level_tried)})` : ''}:</p><ul>${list}</ul><p class="hint">Uma página não pode ser dividida. Escolha como prosseguir.</p>`, btns);
+      if (r.value === 'cancel') { toast('warn', 'Processamento cancelado. Nenhum arquivo foi gerado.'); return; }
+      policy = r.value; continue;
+    }
+    showDone(res); return;
+  }
+}
+function showDone(r) {
+  const saved = r.original_bytes ? Math.round((1 - r.total_bytes / r.original_bytes) * 100) : 0;
+  const rows = r.files.map(f => `<tr><td>${esc(f.name)}</td><td>${f.first_page}–${f.last_page}</td><td class="${f.oversize ? 'over' : ''}">${mb(f.bytes)}${f.oversize ? ' ⚠ acima do limite' : ''}</td></tr>`).join('');
+  const warn = (r.warnings || []).map(w => `<div class="msg warn">${esc(w)}</div>`).join('');
+  $('#result-org').innerHTML = `<div class="msg ok"><strong>Concluído.</strong> ${r.files.length} arquivo${r.files.length > 1 ? 's' : ''}, ${mb(r.total_bytes)} no total (original: ${mb(r.original_bytes)}${saved > 0 ? `, redução de ${saved}%` : ''}).` +
+    `${r.level_used ? ` Compactação: ${esc(r.level_used)}; ${r.images_recompressed} imagem(ns) recomprimida(s).` : ''}</div>` +
+    `<table><thead><tr><th>Arquivo</th><th>Págs.</th><th>Tamanho</th></tr></thead><tbody>${rows}</tbody></table>${warn}` +
+    `<p><button id="btn-reveal">Mostrar na pasta</button></p>`;
+  $('#btn-reveal').onclick = () => invoke('reveal', { path: r.files[0].path }).catch(() => { });
+}
+$('#btn-run').onclick = () => run().catch(e => { setBusy('org', false); toast('err', errMsg(e)); });
+
+/* ---------- extrair ---------- */
+window.addEventListener('pdfapp-progress', e => { const t = $('#busy-ext-text'); if (t) t.textContent = e.detail; });
+let extPath = null, extPassword = null, extOut = '';
+$('#btn-ext-open').onclick = async () => {
+  const f = await invoke('pick_files', { multiple: false }); if (!f || !f.length) return;
+  const got = await openWithPassword(f[0]).catch(e => { toast('err', errMsg(e), '#result-ext'); return null; });
+  if (!got) return;
+  extPath = f[0]; extPassword = got.password;
+  $('#ext-file').textContent = `${baseName(f[0])} — ${got.info.pages} página(s)`;
+  $('#btn-ext-run').disabled = false; $('#result-ext').innerHTML = '';
+};
+$('#btn-ext-outdir').onclick = async () => { const d = await invoke('pick_folder', {}); if (d) { extOut = d; $('#ext-out').value = d; } };
+$('#btn-ext-run').onclick = async () => {
+  const formats = $$('.fmt').filter(c => c.checked).map(c => c.value);
+  if (!formats.length) { toast('err', 'Escolha ao menos um formato.', '#result-ext'); return; }
+  setBusy('ext', true); $('#result-ext').innerHTML = '';
+  try {
+    const r = await api('extract', { path: extPath, password: extPassword, formats, force_ocr: $('#ext-force').checked, verify_numbers: $('#ext-verify').checked, out_dir: extOut || dirOf(extPath), tesseract_dir: null });
+    setBusy('ext', false); showExt(r);
+  } catch (e) { setBusy('ext', false); toast('err', errMsg(e), '#result-ext'); }
+};
+function showExt(r) {
+  const files = r.files.map(f => `<tr><td>${esc(f.name)}</td><td>${mb(f.bytes)}</td></tr>`).join('');
+  const alerts = (r.alerts || []).map(a => `<div class="msg warn"><strong>Alerta:</strong> ${esc(a)}</div>`).join('');
+  const conf = r.mean_conf != null ? `, confiança média do OCR ${Math.round(r.mean_conf)}%` : '';
+  const div = r.divergent_numbers ? `<div class="msg warn">${r.divergent_numbers} número(s) divergiram entre duas leituras de OCR e estão listados no arquivo. Confira-os no PDF original.</div>` : '';
+  const ocrNote = r.ocr ? `<div class="msg warn">${r.ocr} página(s) foram lidas por OCR e podem conter erros em números, datas, valores e nomes. Confira no original antes de usar.</div>` : '';
+  $('#result-ext').innerHTML = `<div class="msg ok"><strong>Concluído.</strong> ${r.pages} página(s): ${r.digital} com texto digital, ${r.ocr} por OCR, ${r.empty} vazia(s)${conf}.</div>${alerts}${div}${ocrNote}` +
+    `<table><thead><tr><th>Arquivo</th><th>Tamanho</th></tr></thead><tbody>${files}</tbody></table><p><button id="btn-reveal2">Mostrar na pasta</button></p>`;
+  $('#btn-reveal2').onclick = () => invoke('reveal', { path: r.files[0].path }).catch(() => { });
+}

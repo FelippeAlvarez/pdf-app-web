@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PDF App (nome provisório)</title>
+<link rel="stylesheet" href="style.css">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#1f5fbf">
+<link rel="icon" href="icons/icon-192.png">
+</head>
+<body>
+<header class="top">
+  <div class="brand">PDF App <small>nome provisório</small></div>
+  <button id="btn-install" class="primary install" hidden title="Instala o app neste computador para uso off-line">Instalar no computador</button>
+  <nav class="tabs" role="tablist">
+    <button role="tab" class="tab active" data-tab="org" aria-selected="true">Organizar e compactar</button>
+    <button role="tab" class="tab" data-tab="ext" aria-selected="false">Extrair texto para IA</button>
+    <button role="tab" class="tab" data-tab="about" aria-selected="false">Sobre</button>
+  </nav>
+</header>
+
+<main>
+<!-- ===== Organizar e compactar ===== -->
+<section id="tab-org" class="panel active">
+  <div class="toolbar" role="toolbar" aria-label="Ferramentas de páginas">
+    <button id="btn-open" class="primary">Abrir PDF…</button>
+    <button id="btn-insert" disabled>Inserir PDF…</button>
+    <span class="sep"></span>
+    <button id="btn-rotl" disabled title="Girar à esquerda (L)">⟲ Girar</button>
+    <button id="btn-rotr" disabled title="Girar à direita (R)">Girar ⟳</button>
+    <button id="btn-dup" disabled title="Duplicar">Duplicar</button>
+    <button id="btn-del" disabled title="Excluir (Delete)">Excluir</button>
+    <span class="sep"></span>
+    <button id="btn-all" disabled>Selecionar tudo</button>
+    <button id="btn-undo" disabled title="Desfazer (Ctrl+Z)">Desfazer</button>
+    <span id="doc-info" class="muted"></span>
+  </div>
+  <div id="banner-signed" class="banner warn" hidden>Este PDF possui assinatura digital. Qualquer alteração a invalida, por isso o app não o processa. Use o arquivo original, sem assinatura.</div>
+  <div class="split">
+    <div id="grid-wrap" class="grid-wrap">
+      <div id="empty" class="empty">
+        <p><strong>Nenhum PDF aberto.</strong></p>
+        <p>Clique em <em>Abrir PDF…</em> para ver as páginas. Depois é possível girar, excluir, duplicar e arrastar páginas para mudar a ordem, e inserir páginas de outro PDF.</p>
+      </div>
+      <div id="grid" class="grid" aria-label="Páginas do documento"></div>
+    </div>
+    <aside class="side">
+      <h2>Saída</h2>
+      <label class="field">Compactação
+        <select id="compress">
+          <option value="nenhuma">Nenhuma (só reorganizar)</option>
+          <option value="baixa">Baixa — melhor qualidade</option>
+          <option value="media" selected>Média — equilíbrio</option>
+          <option value="alta">Alta — arquivo menor</option>
+          <option value="extrema">Extrema — perda visível</option>
+        </select>
+      </label>
+      <p class="hint" id="compress-hint">A compactação reduz a qualidade das imagens (PDFs escaneados). Em PDF só de texto o ganho é pequeno.</p>
+
+      <label class="check"><input type="checkbox" id="split-on"> Dividir em partes de até
+        <input type="number" id="split-mb" min="0.1" step="0.1" value="5" class="num"> MB</label>
+      <p class="hint">Cada parte pode ter qualquer número de páginas; o app mede o arquivo gerado. A soma das partes pode superar o original.</p>
+
+      <fieldset id="oversize-set">
+        <legend>Se uma página sozinha passar do limite</legend>
+        <label class="check"><input type="radio" name="oversize" value="ask" checked> Perguntar antes de prosseguir</label>
+        <label class="check"><input type="radio" name="oversize" value="escalate"> Aumentar a compactação automaticamente</label>
+        <label class="check"><input type="radio" name="oversize" value="proceed"> Gerar mesmo assim (partes marcadas)</label>
+      </fieldset>
+
+      <details class="adv">
+        <summary>Avançado</summary>
+        <label class="field">Reservar espaço em cada parte (KB)
+          <input type="number" id="reserve-kb" min="0" step="10" value="0">
+        </label>
+        <p class="hint">Útil se o arquivo receberá acréscimos depois (por exemplo, assinatura em outro programa).</p>
+      </details>
+
+      <label class="field">Pasta de saída
+        <div class="row"><input id="out-dir" readonly placeholder="Mesma pasta do PDF"><button id="btn-outdir" type="button">Escolher…</button></div>
+      </label>
+      <label class="field">Nome do arquivo
+        <input id="base-name" placeholder="nome_editado">
+      </label>
+
+      <button id="btn-run" class="primary big" disabled>Processar</button>
+      <div id="busy-org" class="busy" hidden><div class="bar"></div><span id="busy-org-text">Processando…</span></div>
+      <div id="result-org" class="result" aria-live="polite"></div>
+    </aside>
+  </div>
+</section>
+
+<!-- ===== Extrair texto ===== -->
+<section id="tab-ext" class="panel">
+  <div class="card-box">
+    <h2>Extrair texto para leitura por IA</h2>
+    <p class="hint">Gera um arquivo leve com o texto do PDF, página por página. Funciona off-line. PDFs escaneados passam por OCR, que pode levar alguns minutos.</p>
+    <div class="row">
+      <button id="btn-ext-open" class="primary">Escolher PDF…</button>
+      <span id="ext-file" class="muted">Nenhum arquivo escolhido</span>
+    </div>
+    <fieldset>
+      <legend>Formatos de saída</legend>
+      <label class="check"><input type="checkbox" class="fmt" value="md" checked> Markdown (.md) — recomendado</label>
+      <label class="check"><input type="checkbox" class="fmt" value="txt"> Texto simples (.txt)</label>
+      <label class="check"><input type="checkbox" class="fmt" value="json"> JSON (.json) — texto por página e metadados</label>
+    </fieldset>
+    <label class="check"><input type="checkbox" id="ext-verify" checked> Conferir números com uma segunda leitura de OCR (recomendado; dobra o tempo do OCR)</label>
+    <label class="check"><input type="checkbox" id="ext-force"> Forçar OCR em todas as páginas (ignora o texto digital)</label>
+    <label class="field">Pasta de saída
+      <div class="row"><input id="ext-out" readonly placeholder="Mesma pasta do PDF"><button id="btn-ext-outdir" type="button">Escolher…</button></div>
+    </label>
+    <button id="btn-ext-run" class="primary big" disabled>Extrair texto</button>
+    <div id="busy-ext" class="busy" hidden><div class="bar"></div><span id="busy-ext-text">Extraindo… pode levar alguns minutos em PDFs escaneados.</span></div>
+    <div id="result-ext" class="result" aria-live="polite"></div>
+  </div>
+</section>
+
+<!-- ===== Sobre ===== -->
+<section id="tab-about" class="panel">
+  <div class="card-box about">
+    <h2>PDF App <small class="muted">(nome provisório)</small></h2>
+    <dl>
+      <dt>Versão</dt><dd id="app-version">0.3.0</dd>
+      <dt>Copyright</dt><dd>© Felippe Alvarez. Todos os direitos reservados.</dd>
+      <dt>Licença do aplicativo</dt><dd><span class="pending">Pendente</span> — uso interno da equipe; sem distribuição a terceiros.</dd>
+      <dt>Termos de uso</dt><dd><span class="pending">Pendente</span> — minuta a ser elaborada.</dd>
+      <dt>Privacidade</dt><dd>O aplicativo funciona off-line e não envia arquivos nem dados para a internet. Política formal: <span class="pending">pendente</span>.</dd>
+    </dl>
+    <h3>Créditos e licenças de componentes</h3>
+    <ul class="credits">
+      <li><strong>Tauri</strong> — MIT / Apache-2.0</li>
+      <li><strong>lopdf</strong> (leitura e escrita de PDF) — MIT</li>
+      <li><strong>hayro</strong> (renderização das páginas) — Apache-2.0 / MIT</li>
+      <li><strong>image</strong> (JPEG/PNG) — MIT / Apache-2.0</li>
+      <li><strong>Tesseract OCR</strong> e dados de idioma <em>tessdata_fast</em> (português) — Apache-2.0</li>
+      <li>Outras dependências em Rust, com licenças permissivas (MIT/Apache-2.0), listadas no código-fonte.</li>
+    </ul>
+    <details class="manual" open>
+      <summary><strong>Manual de uso</strong></summary>
+      <ol>
+        <li><strong>Abrir:</strong> <em>Abrir PDF…</em>. Se o PDF tiver senha de abertura, o app pede a senha.</li>
+        <li><strong>Organizar:</strong> clique numa página para selecioná-la (Ctrl para várias, Shift para intervalo). Use <em>Girar</em>, <em>Duplicar</em> e <em>Excluir</em>, ou arraste para mudar a ordem. <em>Inserir PDF…</em> acrescenta páginas de outro arquivo.</li>
+        <li><strong>Compactar e dividir:</strong> escolha o nível de compactação e, se quiser, o tamanho máximo de cada parte. Os dois são feitos de uma vez. Se alguma página sozinha passar do limite, o app avisa antes de gerar.</li>
+        <li><strong>Processar:</strong> os arquivos são gravados na pasta de saída. O original nunca é alterado.</li>
+        <li><strong>Extrair texto para IA:</strong> gera .md, .txt e/ou .json. Em PDFs escaneados o texto vem de OCR e pode conter erros. <strong>Confira números, datas, valores, CPF/CNPJ e nomes no PDF original</strong>; o app lista os números que divergiram entre duas leituras.</li>
+      </ol>
+      <p class="hint">Limitações: PDF com assinatura digital não é processado; campos de formulário preenchidos e links internos são perdidos ao reorganizar (o app avisa); a compactação reduz a qualidade das imagens.</p>
+    </details>
+  </div>
+</section>
+</main>
+
+<!-- modais -->
+<div id="modal" class="modal" hidden>
+  <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <h3 id="modal-title"></h3>
+    <div id="modal-body"></div>
+    <div id="modal-actions" class="actions"></div>
+  </div>
+</div>
+<script src="ocr/tesseract.min.js"></script>
+<script src="bridge.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
