@@ -18,6 +18,7 @@
   <nav class="tabs" role="tablist">
     <button role="tab" class="tab active" data-tab="org" aria-selected="true">Organizar e compactar</button>
     <button role="tab" class="tab" data-tab="ext" aria-selected="false">Extrair texto para IA</button>
+    <button role="tab" class="tab" data-tab="manual" aria-selected="false">Manual</button>
     <button role="tab" class="tab" data-tab="about" aria-selected="false">Sobre</button>
   </nav>
   <button id="btn-settings" class="icon-btn" title="Configurações" aria-label="Configurações" aria-haspopup="dialog">⚙</button>
@@ -143,6 +144,146 @@
   </div>
 </section>
 
+<!-- ===== Manual ===== -->
+<section id="tab-manual" class="panel">
+  <div class="card-box guide">
+    <h2>Manual de uso — PDF Old Ace</h2>
+    <p class="hint">Versão <span id="manual-version">0.5.0</span>. Este manual descreve o que o aplicativo faz hoje, inclusive seus limites.</p>
+    <nav class="toc" aria-label="Índice do manual">
+      <a href="#m-visao">1. Visão geral</a>
+      <a href="#m-abrir">2. Abrir e juntar PDFs</a>
+      <a href="#m-paginas">3. Organizar páginas</a>
+      <a href="#m-comp">4. Compactar e dividir</a>
+      <a href="#m-saida">5. Nome e pasta dos arquivos</a>
+      <a href="#m-ext">6. Extrair texto para IA</a>
+      <a href="#m-alertas">7. Alertas e conteúdo oculto</a>
+      <a href="#m-cores">8. Cores</a>
+      <a href="#m-instalar">9. Instalar e usar sem internet</a>
+      <a href="#m-atalhos">10. Atalhos</a>
+      <a href="#m-limites">11. Limites e cuidados</a>
+      <a href="#m-problemas">12. Problemas comuns</a>
+    </nav>
+
+    <h3 id="m-visao">1. Visão geral</h3>
+    <p>O PDF Old Ace faz quatro coisas, sempre no próprio aparelho, sem enviar arquivos para a internet:</p>
+    <ul>
+      <li><strong>Organizar:</strong> girar, excluir, duplicar, reordenar páginas e juntar vários PDFs.</li>
+      <li><strong>Compactar:</strong> reduzir o tamanho do arquivo.</li>
+      <li><strong>Dividir:</strong> separar em partes de até um tamanho máximo (pode ser combinado com a compactação).</li>
+      <li><strong>Extrair texto para IA:</strong> gerar um arquivo de texto (.md, .txt, .json) com relatório de integridade, conteúdo oculto, imagens e alertas.</li>
+    </ul>
+    <p>O arquivo original nunca é alterado: o resultado é sempre gravado como um arquivo novo. O app <strong>não</strong> assina, não converte para PDF/A nem para Word ou Excel.</p>
+
+    <h3 id="m-abrir">2. Abrir e juntar PDFs</h3>
+    <ol>
+      <li>Na aba <em>Organizar e compactar</em>, toque em <em>Abrir PDF…</em> e escolha um ou mais arquivos. Se escolher vários, eles são reunidos em um só, na ordem em que foram escolhidos.</li>
+      <li>Para acrescentar outros arquivos depois, selecione uma página e toque em <em>Juntar PDFs…</em>: os novos arquivos entram logo depois da página selecionada. Sem página selecionada, entram no fim.</li>
+      <li>Quando há mais de um arquivo, aparece a lista <em>Arquivos reunidos</em>. Use ▲ e ▼ para mudar a ordem dos arquivos e ✕ para remover um arquivo inteiro. Atenção: ▲ e ▼ reagrupam as páginas por arquivo, desfazendo qualquer mistura de páginas que você tenha feito. O botão <em>Desfazer</em> volta ao estado anterior.</li>
+      <li>Cada página mostra um número pequeno com o arquivo de origem quando há mais de um arquivo.</li>
+      <li>PDF com senha de abertura: o app pede a senha. Em vários arquivos, pede uma senha por arquivo.</li>
+      <li>PDF com assinatura digital não é aceito, porque qualquer alteração a invalidaria. Use o arquivo original, sem assinatura. Em uma seleção com vários arquivos, só o assinado é ignorado, com aviso.</li>
+    </ol>
+
+    <h3 id="m-paginas">3. Organizar páginas</h3>
+    <p><strong>Selecionar.</strong> Com mouse: clique numa página; Ctrl+clique soma ou tira páginas; Shift+clique seleciona um intervalo. No celular: toque numa página; para escolher várias, ative <em>Seleção múltipla</em> e toque em cada uma. <em>Selecionar tudo</em> marca todas (de novo, desmarca).</p>
+    <p><strong>Girar, duplicar, excluir.</strong> Valem para as páginas selecionadas. <em>Girar</em> gira 90° por toque. <em>Duplicar</em> cria uma cópia logo após cada página selecionada. <em>Excluir</em> remove as selecionadas; não é possível excluir todas.</p>
+    <p><strong>Mudar a ordem.</strong> Há quatro jeitos:</p>
+    <ul>
+      <li><strong>Arrastar com o mouse:</strong> arraste as páginas selecionadas até a posição desejada; uma barra mostra onde vão cair.</li>
+      <li><strong>Arrastar com o dedo:</strong> segure a página por cerca de meio segundo (o aparelho pode vibrar) e arraste. A lista rola sozinha quando você chega perto da borda.</li>
+      <li><strong>◀ Mover e Mover ▶:</strong> andam uma posição para trás ou para a frente.</li>
+      <li><strong>Mover para…:</strong> informe a nova posição da primeira página selecionada.</li>
+    </ul>
+    <p><strong>Desfazer</strong> volta a última alteração (até 100 passos). Nada é gravado até você tocar em <em>Processar</em>.</p>
+
+    <h3 id="m-comp">4. Compactar e dividir</h3>
+    <p>No painel <em>Saída</em>:</p>
+    <ul>
+      <li><strong>Compactação:</strong> Nenhuma (só reorganizar), Baixa, Média, Alta ou Extrema. Quanto maior, menor o arquivo e maior a perda de qualidade das imagens. Em PDFs só de texto o ganho costuma ser pequeno; o efeito é maior em PDFs escaneados.</li>
+      <li><strong>Dividir em partes de até … MB:</strong> o app mede o arquivo gerado e fecha cada parte antes de passar do limite. Cada parte pode ter qualquer número de páginas, e a soma das partes pode ser maior que o original.</li>
+      <li><strong>Se uma página sozinha passar do limite:</strong> escolha entre <em>Perguntar antes de prosseguir</em>, <em>Aumentar a compactação automaticamente</em> ou <em>Gerar mesmo assim</em> (as partes assim ficam marcadas).</li>
+      <li><strong>Reservar espaço (KB)</strong>, em <em>Avançado</em>: deixa folga em cada parte, útil se o arquivo receberá acréscimos depois em outro programa.</li>
+    </ul>
+    <p>Compactação e divisão são feitas de uma vez. Ao final, o app mostra o tamanho de cada arquivo gerado.</p>
+
+    <h3 id="m-saida">5. Nome e pasta dos arquivos</h3>
+    <ul>
+      <li>Os arquivos gerados terminam em <code>_OldAce</code>, por exemplo <code>contrato_OldAce.pdf</code>. Se o original já terminar em <code>_OldAce</code>, o sufixo não se repete.</li>
+      <li>Na divisão: <code>contrato_OldAce_parte_01_de_03.pdf</code>, <code>…_parte_02_de_03.pdf</code> e assim por diante.</li>
+      <li>Os arquivos de extração seguem a mesma regra: <code>contrato_OldAce.md</code>, <code>.txt</code>, <code>.json</code>.</li>
+      <li>Você pode editar o campo <em>Nome do arquivo</em>.</li>
+      <li><strong>Windows:</strong> a pasta de saída sugerida é a do PDF de origem; troque em <em>Escolher…</em> se quiser. Se já existir arquivo com o mesmo nome, o app cria um nome novo em vez de sobrescrever.</li>
+      <li><strong>Navegador (inclusive no celular):</strong> o navegador não informa a pasta do arquivo de origem. Os arquivos vão para a pasta Downloads, ou para uma pasta escolhida quando o navegador permite (isso varia: no celular costuma ir sempre para Downloads).</li>
+    </ul>
+
+    <h3 id="m-ext">6. Extrair texto para IA</h3>
+    <ol>
+      <li>Abra a aba <em>Extrair texto para IA</em> e escolha o PDF.</li>
+      <li>Marque os formatos: <strong>Markdown</strong> (recomendado, com relatório e texto por página), <strong>texto simples</strong> ou <strong>JSON</strong> (para uso em programas).</li>
+      <li>Escolha as opções de leitura:
+        <ul>
+          <li><em>Conferir números com uma segunda leitura de OCR</em> (marcada por padrão): nas páginas escaneadas, compara duas leituras e lista os números que divergiram. Dobra o tempo do OCR.</li>
+          <li><em>Forçar OCR em todas as páginas</em>: ignora o texto digital e lê tudo como imagem.</li>
+          <li><em>Ler por OCR o texto das imagens dentro das páginas</em>: transcreve texto que está em figuras, rotulado “texto de imagem (OCR)”.</li>
+          <li><em>Comparar o texto com a página renderizada</em>: aponta divergências entre o texto do PDF e o que aparece na página. Útil para achar texto escondido sob imagens; é bem mais lento.</li>
+          <li><em>Incluir índice de processos, normas, precedentes e “DOC.”</em>: lista no fim do .md o que foi citado. Só lista; não confirma que existam nem que estejam corretos.</li>
+        </ul>
+      </li>
+      <li>Toque em <em>Extrair texto</em>. PDFs escaneados podem levar vários minutos, principalmente no navegador.</li>
+    </ol>
+    <p><strong>O que o .md contém, nesta ordem:</strong> resumo de integridade (nome, tamanho, SHA-256, data e hora, versão do app); varredura de conteúdo oculto (sempre exibida, mesmo quando nada é encontrado); imagens encontradas; cabeçalhos e rodapés repetidos; alertas de instruções dirigidas a IA; o texto de cada página, com negrito, itálico e sublinhado preservados; e, se pedido, o índice jurídico.</p>
+    <p>Imagens aparecem como <code>[IMAGEM p.X – conteúdo não extraído]</code>, salvo se a leitura de imagens por OCR estiver marcada. Trechos ilegíveis ficam marcados e nunca são completados.</p>
+    <p><strong>Antes de usar o resultado:</strong> em PDFs escaneados o texto vem de OCR e pode errar. Confira números, datas, valores, CPF/CNPJ e nomes no PDF original.</p>
+
+    <h3 id="m-alertas">7. Alertas e conteúdo oculto</h3>
+    <p>Alguns documentos trazem frases escritas para influenciar sistemas de IA (por exemplo, pedindo para ignorar instruções anteriores). O app procura esse tipo de frase e lista cada ocorrência com a página, a frase completa, a regra acionada e a gravidade (alta, média ou baixa). Texto invisível (branco, minúsculo, fora da página ou em camada desligada) tem a gravidade elevada.</p>
+    <p>A varredura de conteúdo oculto examina metadados, anotações, campos de formulário, anexos, JavaScript, camadas e links.</p>
+    <p><strong>Editar as regras:</strong> em <em>Padrões de alerta</em>, uma regra por linha, no formato <code>gravidade⇥identificador⇥expressão</code> (⇥ é a tecla Tab; gravidade: alta, media ou baixa). A comparação ignora maiúsculas e acentos e vale por palavra inteira. É possível restaurar o padrão, salvar a lista em arquivo e carregar de arquivo. A lista fica salva neste aparelho.</p>
+    <p>Os alertas são heurísticos: podem apontar frase comum por engano e podem deixar passar redação diferente do esperado. Trate-os como aviso para olhar o documento, não como prova.</p>
+
+    <h3 id="m-cores">8. Cores</h3>
+    <p>Toque na engrenagem (canto superior direito) para abrir as <em>Configurações</em>. Escolha uma paleta: <em>Automático</em> (segue o tema claro ou escuro do aparelho), paletas claras, escuras ou de alto contraste. Cada botão mostra as cores da própria paleta. A escolha fica salva só neste aparelho. Avisos, erros e confirmações mantêm cores próprias em todas as paletas.</p>
+
+    <h3 id="m-instalar">9. Instalar e usar sem internet</h3>
+    <ul>
+      <li><strong>Windows:</strong> instale pelo instalador do programa. Funciona sem internet.</li>
+      <li><strong>Navegador:</strong> abra o endereço do site uma vez com internet. Instale pelo botão <em>Instalar</em> (ou pelo menu do navegador, “Adicionar à tela inicial” / “Instalar app”). Depois disso o app abre e funciona sem conexão, inclusive o OCR.</li>
+      <li><strong>Atualização:</strong> a versão do navegador se atualiza sozinha quando há internet; pode ser preciso fechar e abrir o app, ou recarregar a página duas vezes, para ver a versão nova.</li>
+    </ul>
+
+    <h3 id="m-atalhos">10. Atalhos (teclado, na aba Organizar)</h3>
+    <table class="keys">
+      <tr><td>Delete</td><td>Excluir as páginas selecionadas</td></tr>
+      <tr><td>R / L</td><td>Girar à direita / à esquerda</td></tr>
+      <tr><td>Ctrl+A</td><td>Selecionar todas</td></tr>
+      <tr><td>Ctrl+Z</td><td>Desfazer</td></tr>
+      <tr><td>Ctrl ou Shift + clique</td><td>Selecionar várias / intervalo</td></tr>
+    </table>
+
+    <h3 id="m-limites">11. Limites e cuidados</h3>
+    <ul>
+      <li>PDF com assinatura digital não é processado.</li>
+      <li>Ao reorganizar, campos de formulário preenchidos e links internos podem se perder.</li>
+      <li>A compactação reduz a qualidade das imagens e não é reversível: guarde o original.</li>
+      <li>A extração de texto trata colunas, tabelas e hifenização por heurísticas; revise documentos com colunas ou tabelas. Parágrafos que atravessam páginas não são unidos.</li>
+      <li>OCR erra, sobretudo em digitalização ruim, manuscrito e carimbos. A conferência de números ajuda, mas não elimina o erro.</li>
+      <li>PDFs muito grandes ou com muitas páginas podem esgotar a memória do navegador, principalmente no celular. Se isso ocorrer, divida o arquivo antes ou use a versão do Windows.</li>
+      <li>Os arquivos .md/.txt/.json contêm o texto integral do documento. Antes de enviá-los a qualquer serviço de IA, confirme que você pode compartilhar aquele conteúdo.</li>
+    </ul>
+
+    <h3 id="m-problemas">12. Problemas comuns</h3>
+    <dl class="faq">
+      <dt>O app mostra a versão antiga.</dt><dd>Recarregue a página duas vezes ou feche e reabra o app instalado.</dd>
+      <dt>Não consigo arrastar páginas no celular.</dt><dd>Segure a página por meio segundo antes de arrastar. Se o aparelho rolar a tela em vez disso, use ◀ Mover, Mover ▶ ou Mover para….</dd>
+      <dt>Não sei onde o arquivo foi salvo.</dt><dd>No navegador, procure na pasta Downloads. No Windows, use o botão <em>Mostrar na pasta</em> que aparece ao terminar.</dd>
+      <dt>“Possui assinatura digital”.</dt><dd>O app não altera PDFs assinados. Use o arquivo original sem assinatura.</dd>
+      <dt>A extração está demorando.</dt><dd>PDFs escaneados exigem OCR, que é lento. Desmarque a conferência por segunda leitura, a comparação com a página e a leitura de imagens se não precisar delas.</dd>
+      <dt>A página fica em branco ou a miniatura não aparece.</dt><dd>Aguarde: as miniaturas carregam aos poucos. Se persistir, tente o arquivo original ou salve novamente o PDF em outro programa.</dd>
+    </dl>
+    <p class="hint">Sugestões e problemas: o canal de suporte ainda não foi definido (ver aba Sobre).</p>
+  </div>
+</section>
+
 <!-- ===== Sobre ===== -->
 <section id="tab-about" class="panel">
   <div class="card-box about">
@@ -184,22 +325,8 @@
       <li><strong>tesseract.js</strong> (OCR no navegador) — Apache-2.0</li>
       <li>Demais dependências transitivas em Rust, com licenças permissivas (MIT/Apache-2.0), listadas em <code>Cargo.lock</code>. <span class="pending">Pendente: gerar o arquivo THIRD-PARTY-NOTICES completo antes de distribuir.</span></li>
     </ul>
-    <details class="manual" open>
-      <summary><strong>Manual de uso</strong></summary>
-      <ol>
-        <li><strong>Abrir:</strong> <em>Abrir PDF…</em>. Se o PDF tiver senha de abertura, o app pede a senha.</li>
-        <li><strong>Organizar:</strong> clique numa página para selecioná-la (Ctrl para várias, Shift para intervalo). Use <em>Girar</em>, <em>Duplicar</em> e <em>Excluir</em>, ou arraste para mudar a ordem (no celular: segure a página por meio segundo e arraste; ou use <em>◀ Mover</em>, <em>Mover ▶</em> e <em>Mover para…</em>; <em>Seleção múltipla</em> permite tocar em várias páginas). <em>Abrir PDF…</em> e <em>Juntar PDFs…</em> aceitam vários arquivos de uma vez: eles são reunidos em um só, na ordem escolhida, e a lista <em>Arquivos reunidos</em> permite reordenar ou remover arquivos inteiros.</li>
-        <li><strong>Compactar e dividir:</strong> escolha o nível de compactação e, se quiser, o tamanho máximo de cada parte. Os dois são feitos de uma vez. Se alguma página sozinha passar do limite, o app avisa antes de gerar.</li>
-        <li><strong>Processar:</strong> os arquivos são gravados na pasta de saída. O original nunca é alterado.</li>
-        <li><strong>Extrair texto para IA:</strong> gera .md, .txt e/ou .json. O .md começa com o resumo de integridade (SHA-256, data, versão), a varredura de conteúdo oculto (sempre exibida, mesmo quando nada é encontrado), a lista de imagens e os alertas. Em seguida vem o texto por página, com negrito, itálico e sublinhado preservados.</li>
-        <li><strong>Cores:</strong> toque na engrenagem (canto superior), em Configurações, e escolha uma paleta pronta. Cada botão mostra as cores da própria paleta. Automático segue o tema do aparelho.</li>
-        <li><strong>Nomes e pasta:</strong> os arquivos gerados terminam em <code>_OldAce</code> (divisões: <code>_OldAce_parte_01_de_03</code>). No Windows, a pasta de saída sugerida é a do PDF de origem e pode ser trocada. No navegador, os arquivos vão para Downloads ou para a pasta escolhida.</li>
-        <li><strong>Imagens:</strong> aparecem como <code>[IMAGEM p.X – conteúdo não extraído]</code>. Marque a leitura de imagens por OCR para transcrevê-las como “texto de imagem (OCR)”.</li>
-        <li><strong>Alertas:</strong> frases que parecem dirigidas a uma IA são listadas com página, frase completa, regra acionada e gravidade (alta, média, baixa). Edite as regras em <em>Padrões de alerta</em>.</li>
-        <li><strong>Conferência:</strong> em PDFs escaneados o texto vem de OCR e pode conter erros. <strong>Confira números, datas, valores, CPF/CNPJ e nomes no PDF original</strong>; o app lista os números que divergiram entre duas leituras. Trechos ilegíveis nunca são completados.</li>
-      </ol>
-      <p class="hint">Limitações: PDF com assinatura digital não é processado; campos de formulário preenchidos e links internos são perdidos ao reorganizar (o app avisa); a compactação reduz a qualidade das imagens; a detecção de texto oculto e de instruções é heurística.</p>
-    </details>
+    <h3>Manual de uso</h3>
+    <p>O manual completo está na aba <a href="#" id="go-manual">Manual</a>.</p>
   </div>
 </section>
 </main>
@@ -222,7 +349,7 @@
     <p class="pal-h">Escuras</p><div id="pal-escuras" class="pal" role="radiogroup" aria-label="Paletas escuras"></div>
     <p class="pal-h">Alto contraste</p><div id="pal-alto" class="pal" role="radiogroup" aria-label="Paletas de alto contraste"></div>
     <h3>Mais</h3>
-    <div class="row"><button id="settings-about" type="button">Manual, termos e sobre</button></div>
+    <div class="row"><button id="settings-about" type="button">Manual de uso</button></div>
   </div>
 </div>
 <script src="ocr/tesseract.min.js"></script>

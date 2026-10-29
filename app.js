@@ -484,5 +484,6 @@ function showExt(r) {
   $('#btn-settings').onclick = open;
   $('#settings-close').onclick = close;
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !$('#settings').hidden) close(); });
-  $('#settings-about').onclick = () => { close(); const t = document.querySelector('.tab[data-tab=about]'); if (t) t.click(); };
+  $('#settings-about').onclick = () => { close(); const t = document.querySelector('.tab[data-tab=manual]'); if (t) t.click(); };
+  const gm = $('#go-manual'); if (gm) gm.onclick = ev => { ev.preventDefault(); const t = document.querySelector('.tab[data-tab=manual]'); if (t) t.click(); };
 })();
