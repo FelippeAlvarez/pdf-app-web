@@ -75,5 +75,9 @@ legend{padding:0 6px;color:var(--muted);font-size:12px}
 [hidden]{display:none!important}
 
 .install{margin-left:auto}
+#ext-patterns{width:100%;font:12px/1.4 ui-monospace,Consolas,monospace;padding:8px;border:1px solid var(--line,#ccc);border-radius:6px;background:var(--panel,#fff);color:inherit;resize:vertical;white-space:pre;overflow:auto;margin:6px 0}
+details.patterns{margin:10px 0}
+details.patterns summary{cursor:pointer}
+.msg code,.hint code{font-size:.9em}
 
 #btn-reveal,#btn-reveal2{display:none}

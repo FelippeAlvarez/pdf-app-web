@@ -18,7 +18,7 @@ export class Doc {
         wasm.__wbg_doc_free(ptr, 0);
     }
     /**
-     * Passo 2: com os TSV do OCR (JSON `{"<página>:<dpi>": "<tsv>"}`), conclui e devolve md/txt/json.
+     * Passo 2: com os TSV do OCR (JSON `{"<chave>": "<tsv>"}`), conclui e devolve md/txt/json.
      * @param {string} opts_json
      * @param {string} ocr_json
      * @param {string} title
@@ -29,11 +29,11 @@ export class Doc {
         let deferred5_1;
         try {
             const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-            const ptr0 = passStringToWasm0(opts_json, wasm.__wbindgen_export2, wasm.__wbindgen_export3);
+            const ptr0 = passStringToWasm0(opts_json, wasm.__wbindgen_export3, wasm.__wbindgen_export4);
             const len0 = WASM_VECTOR_LEN;
-            const ptr1 = passStringToWasm0(ocr_json, wasm.__wbindgen_export2, wasm.__wbindgen_export3);
+            const ptr1 = passStringToWasm0(ocr_json, wasm.__wbindgen_export3, wasm.__wbindgen_export4);
             const len1 = WASM_VECTOR_LEN;
-            const ptr2 = passStringToWasm0(title, wasm.__wbindgen_export2, wasm.__wbindgen_export3);
+            const ptr2 = passStringToWasm0(title, wasm.__wbindgen_export3, wasm.__wbindgen_export4);
             const len2 = WASM_VECTOR_LEN;
             wasm.doc_extract_finish(retptr, this.__wbg_ptr, ptr0, len0, ptr1, len1, ptr2, len2);
             var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
@@ -51,11 +51,11 @@ export class Doc {
             return getStringFromWasm0(ptr4, len4);
         } finally {
             wasm.__wbindgen_add_to_stack_pointer(16);
-            wasm.__wbindgen_export4(deferred5_0, deferred5_1, 1);
+            wasm.__wbindgen_export2(deferred5_0, deferred5_1, 1);
         }
     }
     /**
-     * Passo 1 da extração: quais páginas precisam de OCR (JSON: `{pages:[..], dpis:[..]}`).
+     * Passo 1 da extração: lista de pedidos de OCR (JSON: `{requests:[{key,page,dpi,crop}], lang, psm}`).
      * @param {string} opts_json
      * @returns {string}
      */
@@ -64,7 +64,7 @@ export class Doc {
         let deferred3_1;
         try {
             const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-            const ptr0 = passStringToWasm0(opts_json, wasm.__wbindgen_export2, wasm.__wbindgen_export3);
+            const ptr0 = passStringToWasm0(opts_json, wasm.__wbindgen_export3, wasm.__wbindgen_export4);
             const len0 = WASM_VECTOR_LEN;
             wasm.doc_extract_plan(retptr, this.__wbg_ptr, ptr0, len0);
             var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
@@ -82,7 +82,7 @@ export class Doc {
             return getStringFromWasm0(ptr2, len2);
         } finally {
             wasm.__wbindgen_add_to_stack_pointer(16);
-            wasm.__wbindgen_export4(deferred3_0, deferred3_1, 1);
+            wasm.__wbindgen_export2(deferred3_0, deferred3_1, 1);
         }
     }
     /**
@@ -101,7 +101,7 @@ export class Doc {
             return getStringFromWasm0(r0, r1);
         } finally {
             wasm.__wbindgen_add_to_stack_pointer(16);
-            wasm.__wbindgen_export4(deferred1_0, deferred1_1, 1);
+            wasm.__wbindgen_export2(deferred1_0, deferred1_1, 1);
         }
     }
     /**
@@ -113,9 +113,9 @@ export class Doc {
     static open(bytes, password) {
         try {
             const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-            const ptr0 = passArray8ToWasm0(bytes, wasm.__wbindgen_export2);
+            const ptr0 = passArray8ToWasm0(bytes, wasm.__wbindgen_export3);
             const len0 = WASM_VECTOR_LEN;
-            var ptr1 = isLikeNone(password) ? 0 : passStringToWasm0(password, wasm.__wbindgen_export2, wasm.__wbindgen_export3);
+            var ptr1 = isLikeNone(password) ? 0 : passStringToWasm0(password, wasm.__wbindgen_export3, wasm.__wbindgen_export4);
             var len1 = WASM_VECTOR_LEN;
             wasm.doc_open(retptr, ptr0, len0, ptr1, len1);
             var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
@@ -147,7 +147,7 @@ export class Doc {
                 throw takeObject(r2);
             }
             var v1 = getArrayU8FromWasm0(r0, r1).slice();
-            wasm.__wbindgen_export4(r0, r1 * 1, 1);
+            wasm.__wbindgen_export2(r0, r1 * 1, 1);
             return v1;
         } finally {
             wasm.__wbindgen_add_to_stack_pointer(16);
@@ -181,7 +181,7 @@ export class Doc {
             return getStringFromWasm0(ptr1, len1);
         } finally {
             wasm.__wbindgen_add_to_stack_pointer(16);
-            wasm.__wbindgen_export4(deferred2_0, deferred2_1, 1);
+            wasm.__wbindgen_export2(deferred2_0, deferred2_1, 1);
         }
     }
 }
@@ -221,7 +221,7 @@ export class ProcessResult {
             return getStringFromWasm0(r0, r1);
         } finally {
             wasm.__wbindgen_add_to_stack_pointer(16);
-            wasm.__wbindgen_export4(deferred1_0, deferred1_1, 1);
+            wasm.__wbindgen_export2(deferred1_0, deferred1_1, 1);
         }
     }
     /**
@@ -235,7 +235,7 @@ export class ProcessResult {
             var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
             var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
             var v1 = getArrayU8FromWasm0(r0, r1).slice();
-            wasm.__wbindgen_export4(r0, r1 * 1, 1);
+            wasm.__wbindgen_export2(r0, r1 * 1, 1);
             return v1;
         } finally {
             wasm.__wbindgen_add_to_stack_pointer(16);
@@ -252,6 +252,27 @@ export class ProcessResult {
 if (Symbol.dispose) ProcessResult.prototype[Symbol.dispose] = ProcessResult.prototype.free;
 
 /**
+ * Padrões de alerta embutidos (texto editável pelo usuário na interface).
+ * @returns {string}
+ */
+export function default_patterns() {
+    let deferred1_0;
+    let deferred1_1;
+    try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.default_patterns(retptr);
+        var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
+        var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
+        deferred1_0 = r0;
+        deferred1_1 = r1;
+        return getStringFromWasm0(r0, r1);
+    } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_export2(deferred1_0, deferred1_1, 1);
+    }
+}
+
+/**
  * `sources`: Array de Uint8Array; `passwords_json`: JSON com a senha (ou null) de cada fonte.
  * @param {Array<any>} sources
  * @param {string} passwords_json
@@ -261,9 +282,9 @@ if (Symbol.dispose) ProcessResult.prototype[Symbol.dispose] = ProcessResult.prot
 export function process(sources, passwords_json, req_json) {
     try {
         const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-        const ptr0 = passStringToWasm0(passwords_json, wasm.__wbindgen_export2, wasm.__wbindgen_export3);
+        const ptr0 = passStringToWasm0(passwords_json, wasm.__wbindgen_export3, wasm.__wbindgen_export4);
         const len0 = WASM_VECTOR_LEN;
-        const ptr1 = passStringToWasm0(req_json, wasm.__wbindgen_export2, wasm.__wbindgen_export3);
+        const ptr1 = passStringToWasm0(req_json, wasm.__wbindgen_export3, wasm.__wbindgen_export4);
         const len1 = WASM_VECTOR_LEN;
         wasm.process(retptr, addHeapObject(sources), ptr0, len0, ptr1, len1);
         var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);

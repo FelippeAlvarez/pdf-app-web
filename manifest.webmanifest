@@ -1,6 +1,6 @@
 {
-  "name": "PDF App (nome provisório)",
-  "short_name": "PDF App",
+  "name": "PDF Old Ace",
+  "short_name": "PDF Old Ace",
   "description": "Organizar, compactar, dividir e extrair texto de PDFs, off-line, sem enviar arquivos para a internet.",
   "lang": "pt-BR",
   "start_url": "./",

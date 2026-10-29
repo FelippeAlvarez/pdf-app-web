@@ -1,5 +1,5 @@
 // Worker: carrega o motor (WebAssembly) e atende pedidos da página sem travar a interface.
-import init, { Doc, process } from './pkg/pdfweb.js';
+import init, { Doc, process, default_patterns } from './pkg/pdfweb.js';
 
 const docs = new Map();   // chave -> { doc, bytes }
 let ready = null;
@@ -24,6 +24,7 @@ self.onmessage = async (ev) => {
         out = JSON.parse(doc.info());
         break;
       }
+      case 'default_patterns': out = default_patterns(); break;
       case 'thumbs': out = JSON.parse(docs.get(a.key).doc.thumbnails(a.from, a.count, a.dpi)); break;
       case 'page_png': { const u = docs.get(a.key).doc.page_png(a.page, a.dpi); out = u.buffer; transfer = [u.buffer]; break; }
       case 'plan': out = JSON.parse(docs.get(a.key).doc.extract_plan(JSON.stringify(a.opts))); break;

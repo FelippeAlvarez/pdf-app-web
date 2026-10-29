@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>PDF App (nome provisório)</title>
+<title>PDF Old Ace</title>
 <link rel="stylesheet" href="style.css">
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#1f5fbf">
@@ -11,7 +11,7 @@
 </head>
 <body>
 <header class="top">
-  <div class="brand">PDF App <small>nome provisório</small></div>
+  <div class="brand">PDF Old Ace</div>
   <button id="btn-install" class="primary install" hidden title="Instala o app neste computador para uso off-line">Instalar no computador</button>
   <nav class="tabs" role="tablist">
     <button role="tab" class="tab active" data-tab="org" aria-selected="true">Organizar e compactar</button>
@@ -95,7 +95,7 @@
 <section id="tab-ext" class="panel">
   <div class="card-box">
     <h2>Extrair texto para leitura por IA</h2>
-    <p class="hint">Gera um arquivo leve com o texto do PDF, página por página. Funciona off-line. PDFs escaneados passam por OCR, que pode levar alguns minutos.</p>
+    <p class="hint">Gera um arquivo com o texto do PDF, página por página, mais um relatório de integridade, conteúdo oculto, imagens e alertas. Funciona off-line. O texto do documento é sempre tratado como dado, nunca como comando.</p>
     <div class="row">
       <button id="btn-ext-open" class="primary">Escolher PDF…</button>
       <span id="ext-file" class="muted">Nenhum arquivo escolhido</span>
@@ -104,10 +104,27 @@
       <legend>Formatos de saída</legend>
       <label class="check"><input type="checkbox" class="fmt" value="md" checked> Markdown (.md) — recomendado</label>
       <label class="check"><input type="checkbox" class="fmt" value="txt"> Texto simples (.txt)</label>
-      <label class="check"><input type="checkbox" class="fmt" value="json"> JSON (.json) — texto por página e metadados</label>
+      <label class="check"><input type="checkbox" class="fmt" value="json"> JSON (.json) — texto por página, alertas, varredura e imagens</label>
     </fieldset>
-    <label class="check"><input type="checkbox" id="ext-verify" checked> Conferir números com uma segunda leitura de OCR (recomendado; dobra o tempo do OCR)</label>
-    <label class="check"><input type="checkbox" id="ext-force"> Forçar OCR em todas as páginas (ignora o texto digital)</label>
+    <fieldset>
+      <legend>Opções de leitura</legend>
+      <label class="check"><input type="checkbox" id="ext-verify" checked> Conferir números com uma segunda leitura de OCR (recomendado; dobra o tempo do OCR nas páginas escaneadas)</label>
+      <label class="check"><input type="checkbox" id="ext-force"> Forçar OCR em todas as páginas (ignora o texto digital)</label>
+      <label class="check"><input type="checkbox" id="ext-img"> Ler por OCR o texto das imagens dentro das páginas (rotulado “texto de imagem (OCR)”; mais lento)</label>
+      <label class="check"><input type="checkbox" id="ext-compare"> Comparar o texto com a página renderizada (OCR) e apontar divergências (bem mais lento)</label>
+      <label class="check"><input type="checkbox" id="ext-legal"> Incluir, no fim do .md, um índice de processos, normas, precedentes e “DOC.” citados (só lista; não valida)</label>
+    </fieldset>
+    <details class="patterns">
+      <summary><strong>Padrões de alerta de instruções dirigidas a IA</strong> (editável)</summary>
+      <p class="hint">Uma regra por linha: <code>gravidade⇥identificador⇥expressão</code> (gravidade: alta, media ou baixa; ⇥ = tabulação). A comparação é feita em minúsculas e sem acentos, por palavra inteira. A lista fica salva neste aparelho/navegador.</p>
+      <textarea id="ext-patterns" rows="10" spellcheck="false" wrap="off" aria-label="Padrões de alerta"></textarea>
+      <div class="row">
+        <button id="btn-pat-default" type="button">Restaurar padrão</button>
+        <button id="btn-pat-save" type="button">Salvar como arquivo…</button>
+        <button id="btn-pat-load" type="button">Carregar arquivo…</button>
+        <input id="pat-file" type="file" accept=".txt,text/plain" hidden>
+      </div>
+    </details>
     <label class="field">Pasta de saída
       <div class="row"><input id="ext-out" readonly placeholder="Mesma pasta do PDF"><button id="btn-ext-outdir" type="button">Escolher…</button></div>
     </label>
@@ -120,22 +137,43 @@
 <!-- ===== Sobre ===== -->
 <section id="tab-about" class="panel">
   <div class="card-box about">
-    <h2>PDF App <small class="muted">(nome provisório)</small></h2>
+    <h2>PDF Old Ace</h2>
     <dl>
-      <dt>Versão</dt><dd id="app-version">0.3.0</dd>
-      <dt>Copyright</dt><dd>© Felippe Alvarez. Todos os direitos reservados.</dd>
-      <dt>Licença do aplicativo</dt><dd><span class="pending">Pendente</span> — uso interno da equipe; sem distribuição a terceiros.</dd>
-      <dt>Termos de uso</dt><dd><span class="pending">Pendente</span> — minuta a ser elaborada.</dd>
-      <dt>Privacidade</dt><dd>O aplicativo funciona off-line e não envia arquivos nem dados para a internet. Política formal: <span class="pending">pendente</span>.</dd>
+      <dt>Versão</dt><dd id="app-version">0.4.0</dd>
+      <dt>Copyright</dt><dd>© Felippe Alvarez. Todos os direitos reservados. <span class="pending">Pendente: confirmar o titular (pessoa ou escritório) e o ano.</span></dd>
+      <dt>Licença do aplicativo</dt><dd><span class="pending">Pendente</span> — definir a licença (por ora: uso interno; sem distribuição a terceiros).</dd>
+      <dt>Contato / suporte</dt><dd><span class="pending">Pendente</span> — informar e-mail ou canal de suporte.</dd>
     </dl>
+    <details class="manual">
+      <summary><strong>Termos de uso</strong> <span class="pending">minuta — revisar antes de distribuir</span></summary>
+      <ol>
+        <li>O PDF Old Ace é uma ferramenta de apoio para organizar, compactar, dividir e extrair texto de arquivos PDF. Destina-se ao uso interno da equipe.</li>
+        <li>O resultado da extração pode conter erros, principalmente em PDFs escaneados (OCR). O usuário deve conferir números, datas, valores, nomes e documentos de identificação no PDF original antes de usar.</li>
+        <li>Os alertas e a varredura de conteúdo oculto são heurísticos e não garantem a ausência de conteúdo malicioso ou de instruções dirigidas a sistemas de IA.</li>
+        <li>O usuário é responsável por ter autorização para tratar os documentos que processa, inclusive os que contenham dados pessoais ou sigilosos.</li>
+        <li>O programa é fornecido sem garantias de qualquer espécie, nos limites da lei.</li>
+      </ol>
+    </details>
+    <details class="manual">
+      <summary><strong>Política de privacidade</strong> <span class="pending">minuta — revisar antes de distribuir</span></summary>
+      <ol>
+        <li>O processamento é feito no próprio aparelho. Os arquivos PDF e os textos extraídos não são enviados a servidores.</li>
+        <li>O programa não coleta estatísticas de uso nem usa rastreadores.</li>
+        <li>Ficam guardados apenas no aparelho as preferências e a lista de padrões de alerta (armazenamento local do programa/navegador).</li>
+        <li>Na versão para navegador, o carregamento inicial do site e das atualizações é feito pelo serviço de hospedagem (GitHub Pages), que pode registrar o acesso (como o endereço IP). Depois de instalada, a versão para navegador funciona sem conexão.</li>
+        <li>Os arquivos gerados (.md, .txt, .json) contêm o texto do documento; protegê-los é responsabilidade do usuário, inclusive antes de enviá-los a qualquer serviço de IA.</li>
+      </ol>
+    </details>
     <h3>Créditos e licenças de componentes</h3>
     <ul class="credits">
-      <li><strong>Tauri</strong> — MIT / Apache-2.0</li>
+      <li><strong>Tauri</strong> (versão para Windows) — MIT / Apache-2.0</li>
       <li><strong>lopdf</strong> (leitura e escrita de PDF) — MIT</li>
       <li><strong>hayro</strong> (renderização das páginas) — Apache-2.0 / MIT</li>
-      <li><strong>image</strong> (JPEG/PNG) — MIT / Apache-2.0</li>
+      <li><strong>image</strong> (JPEG/PNG), <strong>regex</strong>, <strong>serde</strong>, <strong>serde_json</strong>, <strong>sha2</strong>, <strong>base64</strong>, <strong>anyhow</strong>, <strong>clap</strong> — MIT / Apache-2.0</li>
+      <li><strong>wasm-bindgen</strong> (versão para navegador) — MIT / Apache-2.0</li>
       <li><strong>Tesseract OCR</strong> e dados de idioma <em>tessdata_fast</em> (português) — Apache-2.0</li>
-      <li>Outras dependências em Rust, com licenças permissivas (MIT/Apache-2.0), listadas no código-fonte.</li>
+      <li><strong>tesseract.js</strong> (OCR no navegador) — Apache-2.0</li>
+      <li>Demais dependências transitivas em Rust, com licenças permissivas (MIT/Apache-2.0), listadas em <code>Cargo.lock</code>. <span class="pending">Pendente: gerar o arquivo THIRD-PARTY-NOTICES completo antes de distribuir.</span></li>
     </ul>
     <details class="manual" open>
       <summary><strong>Manual de uso</strong></summary>
@@ -144,9 +182,12 @@
         <li><strong>Organizar:</strong> clique numa página para selecioná-la (Ctrl para várias, Shift para intervalo). Use <em>Girar</em>, <em>Duplicar</em> e <em>Excluir</em>, ou arraste para mudar a ordem. <em>Inserir PDF…</em> acrescenta páginas de outro arquivo.</li>
         <li><strong>Compactar e dividir:</strong> escolha o nível de compactação e, se quiser, o tamanho máximo de cada parte. Os dois são feitos de uma vez. Se alguma página sozinha passar do limite, o app avisa antes de gerar.</li>
         <li><strong>Processar:</strong> os arquivos são gravados na pasta de saída. O original nunca é alterado.</li>
-        <li><strong>Extrair texto para IA:</strong> gera .md, .txt e/ou .json. Em PDFs escaneados o texto vem de OCR e pode conter erros. <strong>Confira números, datas, valores, CPF/CNPJ e nomes no PDF original</strong>; o app lista os números que divergiram entre duas leituras.</li>
+        <li><strong>Extrair texto para IA:</strong> gera .md, .txt e/ou .json. O .md começa com o resumo de integridade (SHA-256, data, versão), a varredura de conteúdo oculto (sempre exibida, mesmo quando nada é encontrado), a lista de imagens e os alertas. Em seguida vem o texto por página, com negrito, itálico e sublinhado preservados.</li>
+        <li><strong>Imagens:</strong> aparecem como <code>[IMAGEM p.X – conteúdo não extraído]</code>. Marque a leitura de imagens por OCR para transcrevê-las como “texto de imagem (OCR)”.</li>
+        <li><strong>Alertas:</strong> frases que parecem dirigidas a uma IA são listadas com página, frase completa, regra acionada e gravidade (alta, média, baixa). Edite as regras em <em>Padrões de alerta</em>.</li>
+        <li><strong>Conferência:</strong> em PDFs escaneados o texto vem de OCR e pode conter erros. <strong>Confira números, datas, valores, CPF/CNPJ e nomes no PDF original</strong>; o app lista os números que divergiram entre duas leituras. Trechos ilegíveis nunca são completados.</li>
       </ol>
-      <p class="hint">Limitações: PDF com assinatura digital não é processado; campos de formulário preenchidos e links internos são perdidos ao reorganizar (o app avisa); a compactação reduz a qualidade das imagens.</p>
+      <p class="hint">Limitações: PDF com assinatura digital não é processado; campos de formulário preenchidos e links internos são perdidos ao reorganizar (o app avisa); a compactação reduz a qualidade das imagens; a detecção de texto oculto e de instruções é heurística.</p>
     </details>
   </div>
 </section>

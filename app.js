@@ -300,17 +300,53 @@ $('#btn-ext-run').onclick = async () => {
   if (!formats.length) { toast('err', 'Escolha ao menos um formato.', '#result-ext'); return; }
   setBusy('ext', true); $('#result-ext').innerHTML = '';
   try {
-    const r = await api('extract', { path: extPath, password: extPassword, formats, force_ocr: $('#ext-force').checked, verify_numbers: $('#ext-verify').checked, out_dir: extOut || dirOf(extPath), tesseract_dir: null });
+    const r = await api('extract', { path: extPath, password: extPassword, formats, force_ocr: $('#ext-force').checked, verify_numbers: $('#ext-verify').checked, ocr_images: $('#ext-img').checked, compare_ocr: $('#ext-compare').checked, legal_index: $('#ext-legal').checked, alert_patterns: currentPatterns(), out_dir: extOut || dirOf(extPath), tesseract_dir: null });
     setBusy('ext', false); showExt(r);
   } catch (e) { setBusy('ext', false); toast('err', errMsg(e), '#result-ext'); }
 };
+// ---- padrões de alerta (editáveis; guardados no aparelho)
+let defaultPatterns = '';
+const PAT_KEY = 'oldace.patterns';
+const lsGet = (k) => { try { return localStorage.getItem(k); } catch (_) { return null; } };
+const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch (_) { /* sem armazenamento */ } };
+function currentPatterns() {
+  const v = $('#ext-patterns').value;
+  return v.trim() && v !== defaultPatterns ? v : null;
+}
+(async function initPatterns() {
+  try { defaultPatterns = await api('default_patterns', {}); } catch (_) { defaultPatterns = ''; }
+  $('#ext-patterns').value = lsGet(PAT_KEY) || defaultPatterns;
+})();
+$('#ext-patterns').addEventListener('input', () => { const v = $('#ext-patterns').value; v === defaultPatterns ? lsSet(PAT_KEY, '') : lsSet(PAT_KEY, v); });
+$('#btn-pat-default').onclick = () => { $('#ext-patterns').value = defaultPatterns; lsSet(PAT_KEY, ''); };
+$('#btn-pat-save').onclick = () => {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([$('#ext-patterns').value], { type: 'text/plain;charset=utf-8' }));
+  a.download = 'padroes_alertas.txt'; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 30000);
+};
+$('#btn-pat-load').onclick = () => $('#pat-file').click();
+$('#pat-file').onchange = async (e) => {
+  const f = e.target.files[0]; if (!f) return;
+  const t = await f.text(); $('#ext-patterns').value = t; lsSet(PAT_KEY, t === defaultPatterns ? '' : t); e.target.value = '';
+};
+
 function showExt(r) {
   const files = r.files.map(f => `<tr><td>${esc(f.name)}</td><td>${mb(f.bytes)}</td></tr>`).join('');
-  const alerts = (r.alerts || []).map(a => `<div class="msg warn"><strong>Alerta:</strong> ${esc(a)}</div>`).join('');
+  const sevCls = { 'alta': 'err', 'média': 'warn', 'baixa': 'warn' };
+  const items = (r.alert_items || []).map(a => {
+    const sev = a.severity === 'media' ? 'média' : a.severity;
+    return `<div class="msg ${sevCls[sev] || 'warn'}"><strong>Alerta ${esc(sev)}</strong> — ${a.page ? 'página ' + a.page : 'metadados'}, regra «${esc(a.pattern)}»${a.matched ? ', trecho «' + esc(a.matched) + '»' : ''}<br><em>Frase:</em> ${esc(a.sentence)}</div>`;
+  }).join('');
+  const alerts = items || (r.alerts || []).map(a => `<div class="msg warn"><strong>Alerta:</strong> ${esc(a)}</div>`).join('');
+  const none = !alerts ? '<div class="msg ok">Nenhum alerta de instrução dirigida a IA (a detecção é heurística e não garante ausência).</div>' : '';
+  const perr = (r.pattern_errors || []).map(e => `<div class="msg warn">${esc(e)}</div>`).join('');
   const conf = r.mean_conf != null ? `, confiança média do OCR ${Math.round(r.mean_conf)}%` : '';
+  const hid = r.hidden_blocks ? `<div class="msg warn">${r.hidden_blocks} trecho(s) de texto oculto foram retirados do corpo e transcritos, rotulados, no arquivo.</div>` : '';
+  const imgs = r.images ? `<div class="msg">${r.images} imagem(ns) incorporada(s) listada(s) no arquivo; nenhuma é omitida em silêncio.</div>` : '';
   const div = r.divergent_numbers ? `<div class="msg warn">${r.divergent_numbers} número(s) divergiram entre duas leituras de OCR e estão listados no arquivo. Confira-os no PDF original.</div>` : '';
   const ocrNote = r.ocr ? `<div class="msg warn">${r.ocr} página(s) foram lidas por OCR e podem conter erros em números, datas, valores e nomes. Confira no original antes de usar.</div>` : '';
-  $('#result-ext').innerHTML = `<div class="msg ok"><strong>Concluído.</strong> ${r.pages} página(s): ${r.digital} com texto digital, ${r.ocr} por OCR, ${r.empty} vazia(s)${conf}.</div>${alerts}${div}${ocrNote}` +
+  $('#result-ext').innerHTML = `<div class="msg ok"><strong>Concluído.</strong> ${r.pages} página(s): ${r.digital} com texto digital, ${r.ocr} por OCR, ${r.empty} vazia(s)${conf}.</div>${alerts}${none}${perr}${hid}${imgs}${div}${ocrNote}` +
     `<table><thead><tr><th>Arquivo</th><th>Tamanho</th></tr></thead><tbody>${files}</tbody></table><p><button id="btn-reveal2">Mostrar na pasta</button></p>`;
   $('#btn-reveal2').onclick = () => invoke('reveal', { path: r.files[0].path }).catch(() => { });
 }

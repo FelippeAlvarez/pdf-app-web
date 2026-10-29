@@ -70,19 +70,38 @@
     return ocrWorker;
   }
 
+  // recorta um PNG (ArrayBuffer) para a região pedida
+  async function cropPng(buf, c) {
+    const bmp = await createImageBitmap(new Blob([buf], { type: 'image/png' }));
+    const x = Math.min(c[0], bmp.width - 1), y = Math.min(c[1], bmp.height - 1);
+    const w = Math.max(1, Math.min(c[2], bmp.width - x)), h = Math.max(1, Math.min(c[3], bmp.height - y));
+    const cv = new OffscreenCanvas(w, h);
+    cv.getContext('2d').drawImage(bmp, x, y, w, h, 0, 0, w, h);
+    return await cv.convertToBlob({ type: 'image/png' });
+  }
+
   async function extract(r) {
     const key = r.path;
-    const opts = { force_ocr: !!r.force_ocr, verify_numbers: !!r.verify_numbers };
+    const opts = {
+      force_ocr: !!r.force_ocr, verify_numbers: !!r.verify_numbers, ocr_images: !!r.ocr_images,
+      compare_ocr: !!r.compare_ocr, legal_index: !!r.legal_index,
+      alert_patterns: r.alert_patterns || null, timestamp: new Date().toISOString().replace('T', ' ').replace(/\.\d+Z$/, ' UTC'),
+    };
     const plan = await call('plan', { key, opts });
     const ocr = {};
-    if (plan.pages.length) {
+    if (plan.requests.length) {
       const w = await getOcr();
-      let done = 0; const total = plan.pages.length * plan.dpis.length;
-      for (const page of plan.pages) for (const dpi of plan.dpis) {
-        progress(`OCR: página ${page} (${dpi} dpi) — ${done + 1} de ${total}`);
-        const buf = await call('page_png', { key, page, dpi });
-        const res = await w.recognize(new Blob([buf], { type: 'image/png' }), {}, { tsv: true });
-        ocr[page + ':' + dpi] = res.data.tsv || '';
+      let done = 0; const total = plan.requests.length;
+      const cache = new Map();
+      for (const q of plan.requests) {
+        progress(`OCR: ${q.crop ? 'imagem na página ' : 'página '}${q.page} (${q.dpi} dpi) — ${done + 1} de ${total}`);
+        const ck = q.page + ':' + q.dpi;
+        let buf = cache.get(ck);
+        if (!buf) { buf = await call('page_png', { key, page: q.page, dpi: q.dpi }); cache.clear(); cache.set(ck, buf.slice(0)); }
+        else buf = buf.slice(0);
+        const img = q.crop ? await cropPng(buf, q.crop) : new Blob([buf], { type: 'image/png' });
+        const res = await w.recognize(img, {}, { tsv: true });
+        ocr[q.key] = res.data.tsv || '';
         done++;
       }
     }
@@ -94,7 +113,7 @@
       const n = await saveFile(r.out_dir, stemOf(key) + '.' + f, new TextEncoder().encode(fin[f]), mimes[f] + ';charset=utf-8');
       out.push({ name: n, path: n, first_page: 1, last_page: fin.pages, bytes: new TextEncoder().encode(fin[f]).length, oversize: false });
     }
-    return { files: out, pages: fin.pages, digital: fin.digital, ocr: fin.ocr, empty: fin.empty, divergent_numbers: fin.divergent_numbers, mean_conf: fin.mean_conf, alerts: fin.alerts };
+    return { files: out, pages: fin.pages, digital: fin.digital, ocr: fin.ocr, empty: fin.empty, divergent_numbers: fin.divergent_numbers, mean_conf: fin.mean_conf, alerts: fin.alerts, alert_items: fin.alert_items, pattern_errors: fin.pattern_errors, images: fin.images, hidden_blocks: fin.hidden_blocks };
   }
 
   async function processReq(r) {
@@ -115,6 +134,7 @@
     thumbnails: (p) => call('thumbs', { key: p.path, from: p.from, count: p.count, dpi: p.dpi }),
     process: processReq,
     extract,
+    default_patterns: () => call('default_patterns', {}),
   };
   window.__TAURI__ = {
     core: {
