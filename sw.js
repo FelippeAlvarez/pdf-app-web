@@ -1,5 +1,5 @@
 // Service worker: guarda todos os arquivos do app no primeiro acesso, para uso off-line.
-const VERSION = 'e30db356e0cb';
+const VERSION = 'f271712d452a';
 const CACHE = 'pdfapp-' + VERSION;
 
 self.addEventListener('install', (e) => {

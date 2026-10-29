@@ -66,10 +66,10 @@ async function openWithPassword(path) {
 }
 
 async function addSource(path, insertAt /* índice na lista de entries ou null */) {
-  const got = await openWithPassword(path); if (!got) return;
+  const got = await openWithPassword(path); if (!got) return 0;
   const { info, password } = got;
   $('#banner-signed').hidden = !info.signed;
-  if (info.signed) { toast('err', 'Este PDF possui assinatura digital e não pode ser processado.'); return; }
+  if (info.signed) { toast('err', 'O arquivo "' + baseName(path) + '" possui assinatura digital e não pode ser processado; foi ignorado.'); return 0; }
   const idx = S.sources.length;
   S.sources.push({ path, password, pages: info.pages, name: baseName(path), form: info.has_form, size: info.size_bytes });
   const news = Array.from({ length: info.pages }, (_, i) => ({ id: S.nextId++, src: idx, page: i + 1, rot: 0 }));
@@ -79,19 +79,22 @@ async function addSource(path, insertAt /* índice na lista de entries ou null *
     S.outDir = IS_WEB ? '' : dirOf(path); $('#out-dir').value = S.outDir;
   }
   render();
+  return news.length;
 }
 
 async function onOpen() {
-  const files = await invoke('pick_files', { multiple: false }); if (!files || !files.length) return;
+  const files = await invoke('pick_files', { multiple: true }); if (!files || !files.length) return;
   S.sources = []; S.entries = []; S.sel.clear(); S.hist = []; S.thumbs.clear(); $('#btn-undo').disabled = true; $('#result-org').innerHTML = '';
-  await addSource(files[0], null);
+  let ok = 0;
+  for (const f of files) { if (await addSource(f, null)) ok++; }
+  if (ok > 1) toast('ok', ok + ' arquivos reunidos. Ajuste a ordem dos arquivos ou das páginas e clique em Processar.');
 }
 async function onInsert() {
-  const files = await invoke('pick_files', { multiple: false }); if (!files || !files.length) return;
+  const files = await invoke('pick_files', { multiple: true }); if (!files || !files.length) return;
   snapshot();
   const selIdx = S.entries.map((e, i) => S.sel.has(e.id) ? i : -1).filter(i => i >= 0);
-  const at = selIdx.length ? Math.max(...selIdx) + 1 : S.entries.length;
-  await addSource(files[0], at);
+  let at = selIdx.length ? Math.max(...selIdx) + 1 : S.entries.length;
+  for (const f of files) at += await addSource(f, at);
 }
 
 /* ---------- miniaturas (carga preguiçosa) ---------- */
@@ -135,7 +138,8 @@ function paintThumbs() {
 function render() {
   const has = S.entries.length > 0;
   $('#empty').hidden = has;
-  $$('#btn-insert,#btn-rotl,#btn-rotr,#btn-dup,#btn-del,#btn-all,#btn-run').forEach(b => b.disabled = !has);
+  $$('#btn-insert,#btn-rotl,#btn-rotr,#btn-dup,#btn-del,#btn-all,#btn-run,#btn-multi').forEach(b => b.disabled = !has);
+  renderFiles();
   const grid = $('#grid'); grid.innerHTML = '';
   S.entries.forEach((e, i) => {
     const c = document.createElement('div');
@@ -145,6 +149,7 @@ function render() {
     c.innerHTML = `<div class="thumb"><div class="ph"></div></div><div class="lbl"><span>${i + 1}</span><span>${srcTag} p.${e.page}${e.rot ? ' ↻' + ((e.rot % 360) + 360) % 360 + '°' : ''}</span></div>`;
     c.setAttribute('aria-label', `Posição ${i + 1}, página ${e.page}`);
     c.addEventListener('click', ev => selectCard(e, ev));
+    c.addEventListener('contextmenu', ev => ev.preventDefault());
     c.addEventListener('dragstart', ev => { if (!S.sel.has(e.id)) { S.sel = new Set([e.id]); } c.classList.add('dragging'); ev.dataTransfer.setData('text/plain', 'pages'); ev.dataTransfer.effectAllowed = 'move'; });
     c.addEventListener('dragend', () => { c.classList.remove('dragging'); clearDrop(); });
     c.addEventListener('dragover', ev => { ev.preventDefault(); clearDrop(); const r = c.getBoundingClientRect(); c.classList.add(ev.clientX < r.left + r.width / 2 ? 'drop-before' : 'drop-after'); });
@@ -156,7 +161,7 @@ function render() {
   const total = S.entries.length;
   $('#doc-info').textContent = has ? `${S.sources.map(s => s.name).join(' + ')} — ${total} página${total > 1 ? 's' : ''}${S.sel.size ? `, ${S.sel.size} selecionada${S.sel.size > 1 ? 's' : ''}` : ''}` : '';
   const hasSel = S.sel.size > 0;
-  $$('#btn-rotl,#btn-rotr,#btn-dup,#btn-del').forEach(b => b.disabled = !hasSel);
+  $$('#btn-rotl,#btn-rotr,#btn-dup,#btn-del,#btn-left,#btn-right,#btn-moveto').forEach(b => b.disabled = !hasSel);
   if (!has) $('#btn-undo').disabled = !S.hist.length;
 }
 function clearDrop() { $$('.drop-before,.drop-after').forEach(x => x.classList.remove('drop-before', 'drop-after')); }
@@ -167,7 +172,7 @@ function selectCard(e, ev) {
     const a = Math.min(S.last, i), b = Math.max(S.last, i);
     if (!ev.ctrlKey && !ev.metaKey) S.sel.clear();
     for (let k = a; k <= b; k++) S.sel.add(S.entries[k].id);
-  } else if (ev.ctrlKey || ev.metaKey) {
+  } else if (ev.ctrlKey || ev.metaKey || S.multi) {
     S.sel.has(e.id) ? S.sel.delete(e.id) : S.sel.add(e.id); S.last = i;
   } else { S.sel = new Set([e.id]); S.last = i; }
   render();
@@ -191,6 +196,106 @@ function dupSel() {
   const out = []; const newSel = new Set();
   S.entries.forEach(e => { out.push(e); if (S.sel.has(e.id)) { const c = { ...e, id: S.nextId++ }; out.push(c); newSel.add(c.id); } });
   S.entries = out; S.sel = newSel; render();
+}
+
+
+/* ---------- mover por botões, por posição e por toque ---------- */
+S.multi = false;
+function moveSelectedBy(d) {
+  if (!S.sel.size) return;
+  const idx = S.entries.map((e, i) => S.sel.has(e.id) ? i : -1).filter(i => i >= 0);
+  const pos = d < 0 ? Math.max(0, idx[0] - 1) : Math.min(S.entries.length, idx[idx.length - 1] + 2);
+  moveSelectedTo(pos);
+  const el = document.querySelector('.pcard.sel'); if (el && el.scrollIntoView) el.scrollIntoView({ block: 'nearest' });
+}
+function moveSelectedToIndex(n /* posição final (1-based) da primeira selecionada */) {
+  const moving = S.entries.filter(e => S.sel.has(e.id)); if (!moving.length) return;
+  snapshot();
+  const rest = S.entries.filter(e => !S.sel.has(e.id));
+  const at = Math.max(0, Math.min(rest.length, n - 1));
+  S.entries = [...rest.slice(0, at), ...moving, ...rest.slice(at)]; render();
+}
+async function moveSelectedPrompt() {
+  if (!S.sel.size) return;
+  const r = await modal('Mover para a posição', `<p>Nova posição da primeira página selecionada (1 a ${S.entries.length}).</p><input type="number" min="1" max="${S.entries.length}" value="1" style="width:100%">`, [{ label: 'Cancelar', value: 'no' }, { label: 'Mover', value: 'ok', primary: true }]);
+  if (r.value !== 'ok') return;
+  const n = Math.round(Number(r.input)); if (!(n >= 1 && n <= S.entries.length)) { toast('err', 'Posição inválida.'); return; }
+  moveSelectedToIndex(n);
+}
+$('#btn-left').onclick = () => moveSelectedBy(-1);
+$('#btn-right').onclick = () => moveSelectedBy(1);
+$('#btn-moveto').onclick = () => moveSelectedPrompt();
+$('#btn-multi').onclick = () => { S.multi = !S.multi; $('#btn-multi').classList.toggle('on', S.multi); $('#btn-multi').setAttribute('aria-pressed', S.multi); };
+
+/* arrastar com o dedo: segurar ~0,4 s numa página e arrastar */
+(function touchDrag() {
+  const grid = $('#grid'), wrap = $('#grid-wrap');
+  let timer = null, drag = null, sx = 0, sy = 0;
+  const cardAt = (x, y) => { const el = document.elementFromPoint(x, y); return el && el.closest ? el.closest('.pcard') : null; };
+  const cancel = () => { clearTimeout(timer); timer = null; };
+  grid.addEventListener('touchstart', ev => {
+    if (ev.touches.length !== 1) { cancel(); return; }
+    const c = ev.target.closest('.pcard'); if (!c) return;
+    const t = ev.touches[0]; sx = t.clientX; sy = t.clientY;
+    timer = setTimeout(() => {
+      const id = Number(c.dataset.id);
+      if (!S.sel.has(id)) { S.sel = new Set([id]); $$('.pcard').forEach(x => x.classList.toggle('sel', S.sel.has(Number(x.dataset.id)))); }
+      drag = { pos: null }; c.classList.add('dragging'); if (navigator.vibrate) try { navigator.vibrate(20); } catch (_) { }
+    }, 400);
+  }, { passive: true });
+  grid.addEventListener('touchmove', ev => {
+    const t = ev.touches[0];
+    if (!drag) { if (Math.abs(t.clientX - sx) > 10 || Math.abs(t.clientY - sy) > 10) cancel(); return; }
+    ev.preventDefault();
+    clearDrop();
+    const c = cardAt(t.clientX, t.clientY);
+    if (c) { const r = c.getBoundingClientRect(); const before = t.clientX < r.left + r.width / 2; c.classList.add(before ? 'drop-before' : 'drop-after'); drag.pos = Number(c.dataset.idx) + (before ? 0 : 1); }
+    const wr = wrap.getBoundingClientRect();
+    if (t.clientY < wr.top + 50) wrap.scrollTop -= 14; else if (t.clientY > wr.bottom - 50) wrap.scrollTop += 14;
+  }, { passive: false });
+  const end = ev => {
+    cancel(); if (!drag) return;
+    const pos = drag.pos; drag = null; clearDrop(); $$('.pcard.dragging').forEach(x => x.classList.remove('dragging'));
+    ev.preventDefault();
+    if (pos != null) moveSelectedTo(pos);
+  };
+  grid.addEventListener('touchend', end, { passive: false });
+  grid.addEventListener('touchcancel', () => { cancel(); drag = null; clearDrop(); $$('.pcard.dragging').forEach(x => x.classList.remove('dragging')); });
+})();
+
+/* ---------- ordem dos arquivos (quando há mais de um) ---------- */
+function renderFiles() {
+  const box = $('#files'); if (!box) return;
+  const n = S.sources.length;
+  box.hidden = n < 2; if (n < 2) { box.innerHTML = ''; return; }
+  // ordem dos arquivos = ordem da primeira aparição na lista de páginas
+  const order = []; S.entries.forEach(e => { if (!order.includes(e.src)) order.push(e.src); });
+  box.innerHTML = '<div class="files-h"><strong>Arquivos reunidos</strong> <span class="muted">— ▲▼ reagrupam as páginas por arquivo; ✕ remove o arquivo</span></div>';
+  order.forEach((si, k) => {
+    const s = S.sources[si], cnt = S.entries.filter(e => e.src === si).length;
+    const row = document.createElement('div'); row.className = 'frow';
+    row.innerHTML = `<span class="tag">${si + 1}</span><span class="fname" title="${esc(s.name)}">${esc(s.name)}</span><span class="muted">${cnt} pág.</span>`;
+    const mk = (txt, title, fn, dis) => { const b = document.createElement('button'); b.textContent = txt; b.title = title; b.setAttribute('aria-label', title + ' ' + s.name); b.disabled = !!dis; b.onclick = fn; row.appendChild(b); };
+    mk('▲', 'Subir arquivo', () => reorderFiles(order, k, k - 1), k === 0);
+    mk('▼', 'Descer arquivo', () => reorderFiles(order, k, k + 1), k === order.length - 1);
+    mk('✕', 'Remover arquivo', () => removeFile(si), order.length < 2);
+    box.appendChild(row);
+  });
+}
+function reorderFiles(order, from, to) {
+  if (to < 0 || to >= order.length) return;
+  snapshot();
+  const o = order.slice(); const [x] = o.splice(from, 1); o.splice(to, 0, x);
+  const rank = new Map(o.map((si, i) => [si, i]));
+  // reagrupa por arquivo, mantendo a ordem relativa das páginas de cada arquivo
+  S.entries = S.entries.map((e, i) => ({ e, i })).sort((a, b) => (rank.get(a.e.src) - rank.get(b.e.src)) || (a.i - b.i)).map(x => x.e);
+  render();
+}
+function removeFile(si) {
+  snapshot();
+  S.entries = S.entries.filter(e => e.src !== si);
+  S.sel = new Set([...S.sel].filter(id => S.entries.some(e => e.id === id)));
+  render();
 }
 
 $('#btn-open').onclick = () => onOpen().catch(e => toast('err', errMsg(e)));

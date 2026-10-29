@@ -27,24 +27,30 @@
 <!-- ===== Organizar e compactar ===== -->
 <section id="tab-org" class="panel active">
   <div class="toolbar" role="toolbar" aria-label="Ferramentas de páginas">
-    <button id="btn-open" class="primary">Abrir PDF…</button>
-    <button id="btn-insert" disabled>Inserir PDF…</button>
+    <button id="btn-open" class="primary" title="Escolha um ou mais PDFs; vários são reunidos em um só">Abrir PDF…</button>
+    <button id="btn-insert" disabled title="Acrescenta um ou mais PDFs depois da página selecionada (ou no fim)">Juntar PDFs…</button>
     <span class="sep"></span>
     <button id="btn-rotl" disabled title="Girar à esquerda (L)">⟲ Girar</button>
     <button id="btn-rotr" disabled title="Girar à direita (R)">Girar ⟳</button>
     <button id="btn-dup" disabled title="Duplicar">Duplicar</button>
     <button id="btn-del" disabled title="Excluir (Delete)">Excluir</button>
     <span class="sep"></span>
+    <button id="btn-left" disabled title="Mover a seleção uma posição para trás">◀ Mover</button>
+    <button id="btn-right" disabled title="Mover a seleção uma posição para frente">Mover ▶</button>
+    <button id="btn-moveto" disabled title="Mover a seleção para uma posição">Mover para…</button>
+    <span class="sep"></span>
+    <button id="btn-multi" disabled aria-pressed="false" title="No celular: toque em várias páginas para selecioná-las">Seleção múltipla</button>
     <button id="btn-all" disabled>Selecionar tudo</button>
     <button id="btn-undo" disabled title="Desfazer (Ctrl+Z)">Desfazer</button>
     <span id="doc-info" class="muted"></span>
   </div>
+  <div id="files" class="files" hidden></div>
   <div id="banner-signed" class="banner warn" hidden>Este PDF possui assinatura digital. Qualquer alteração a invalida, por isso o app não o processa. Use o arquivo original, sem assinatura.</div>
   <div class="split">
     <div id="grid-wrap" class="grid-wrap">
       <div id="empty" class="empty">
         <p><strong>Nenhum PDF aberto.</strong></p>
-        <p>Clique em <em>Abrir PDF…</em> para ver as páginas. Depois é possível girar, excluir, duplicar e arrastar páginas para mudar a ordem, e inserir páginas de outro PDF.</p>
+        <p>Clique em <em>Abrir PDF…</em> para ver as páginas. Escolha mais de um arquivo para juntá-los. Depois é possível girar, excluir, duplicar e mudar a ordem das páginas (arrastando, ou pelos botões Mover), e juntar outros PDFs.</p>
       </div>
       <div id="grid" class="grid" aria-label="Páginas do documento"></div>
     </div>
@@ -182,7 +188,7 @@
       <summary><strong>Manual de uso</strong></summary>
       <ol>
         <li><strong>Abrir:</strong> <em>Abrir PDF…</em>. Se o PDF tiver senha de abertura, o app pede a senha.</li>
-        <li><strong>Organizar:</strong> clique numa página para selecioná-la (Ctrl para várias, Shift para intervalo). Use <em>Girar</em>, <em>Duplicar</em> e <em>Excluir</em>, ou arraste para mudar a ordem. <em>Inserir PDF…</em> acrescenta páginas de outro arquivo.</li>
+        <li><strong>Organizar:</strong> clique numa página para selecioná-la (Ctrl para várias, Shift para intervalo). Use <em>Girar</em>, <em>Duplicar</em> e <em>Excluir</em>, ou arraste para mudar a ordem (no celular: segure a página por meio segundo e arraste; ou use <em>◀ Mover</em>, <em>Mover ▶</em> e <em>Mover para…</em>; <em>Seleção múltipla</em> permite tocar em várias páginas). <em>Abrir PDF…</em> e <em>Juntar PDFs…</em> aceitam vários arquivos de uma vez: eles são reunidos em um só, na ordem escolhida, e a lista <em>Arquivos reunidos</em> permite reordenar ou remover arquivos inteiros.</li>
         <li><strong>Compactar e dividir:</strong> escolha o nível de compactação e, se quiser, o tamanho máximo de cada parte. Os dois são feitos de uma vez. Se alguma página sozinha passar do limite, o app avisa antes de gerar.</li>
         <li><strong>Processar:</strong> os arquivos são gravados na pasta de saída. O original nunca é alterado.</li>
         <li><strong>Extrair texto para IA:</strong> gera .md, .txt e/ou .json. O .md começa com o resumo de integridade (SHA-256, data, versão), a varredura de conteúdo oculto (sempre exibida, mesmo quando nada é encontrado), a lista de imagens e os alertas. Em seguida vem o texto por página, com negrito, itálico e sublinhado preservados.</li>
