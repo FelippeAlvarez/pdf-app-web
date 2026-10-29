@@ -35,6 +35,7 @@
     try { const h = await window.showDirectoryPicker({ mode: 'readwrite' }); dirs.set(h.name, h); return h.name; } catch (_) { return null; }
   }
 
+  let lastOut = [];   // arquivos da última operação (para salvar em outro local / compartilhar)
   async function saveFile(outDir, name, data, mime) {
     const blob = new Blob([data], { type: mime });
     const h = outDir && dirs.get(outDir);
@@ -42,12 +43,57 @@
       let n = name, i = 2;
       for (;;) { try { await h.getFileHandle(n); const dot = name.lastIndexOf('.'); n = name.slice(0, dot) + ' (' + i++ + ')' + name.slice(dot); } catch (_) { break; } }
       const fh = await h.getFileHandle(n, { create: true }); const w = await fh.createWritable(); await w.write(blob); await w.close();
+      lastOut.push({ name: n, blob });
       return n;
     }
+    lastOut.push({ name, blob });
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(a.href), 30000);
     await new Promise(r => setTimeout(r, 300));
     return name;
+  }
+
+
+  // ---- salvar em outro local / compartilhar ----
+  const shareType = (o, alt) => alt ? (/\.(md|txt)$/i.test(o.name) ? 'text/plain' : 'application/octet-stream') : (o.blob.type || 'application/octet-stream');
+  async function shareOutputs() {
+    if (!lastOut.length) throw { code: 'other', message: 'Não há arquivos recentes para compartilhar.' };
+    if (typeof navigator.canShare !== 'function' || typeof navigator.share !== 'function') throw { code: 'other', message: 'Este navegador não permite compartilhar arquivos. Use “Salvar em outro local”.' };
+    let list = lastOut.map(o => new File([o.blob], o.name, { type: shareType(o, false) }));
+    if (!navigator.canShare({ files: list })) list = lastOut.map(o => new File([o.blob], o.name, { type: shareType(o, true) }));
+    if (!navigator.canShare({ files: list })) throw { code: 'other', message: 'Este navegador não permite compartilhar este tipo de arquivo. Use “Salvar em outro local”.' };
+    try { await navigator.share({ files: list, title: 'PDF Old Ace' }); }
+    catch (e) { if (e && e.name === 'AbortError') return null; throw { code: 'other', message: 'Não foi possível compartilhar: ' + (e && e.message || e) }; }
+    return { message: 'Arquivos enviados ao aplicativo escolhido.' };
+  }
+  let pendingSave = [];
+  async function saveOutputsElsewhere() {
+    if (!lastOut.length) throw { code: 'other', message: 'Não há arquivos recentes para salvar.' };
+    try {
+      if (window.showDirectoryPicker) {
+        const h = await window.showDirectoryPicker({ mode: 'readwrite' }); let n = 0;
+        for (const o of lastOut) {
+          let name = o.name, i = 2;
+          for (;;) { try { await h.getFileHandle(name); const dot = o.name.lastIndexOf('.'); name = o.name.slice(0, dot) + ' (' + i++ + ')' + o.name.slice(dot); } catch (_) { break; } }
+          const fh = await h.getFileHandle(name, { create: true }); const w = await fh.createWritable(); await w.write(o.blob); await w.close(); n++;
+        }
+        return { where: h.name, count: n };
+      }
+      if (window.showSaveFilePicker) {
+        if (!pendingSave.length) pendingSave = lastOut.slice();
+        let n = 0;
+        while (pendingSave.length) {
+          const o = pendingSave[0];
+          let fh; try { fh = await window.showSaveFilePicker({ suggestedName: o.name }); }
+          catch (e) { if (e && e.name === 'AbortError') { pendingSave = []; return n ? { message: `${n} arquivo(s) salvo(s).` } : null; } if (n) return { message: `${n} arquivo(s) salvo(s). Toque de novo no botão para salvar os ${pendingSave.length} restantes.` }; throw e; }
+          const w = await fh.createWritable(); await w.write(o.blob); await w.close(); pendingSave.shift(); n++;
+        }
+        return { message: `${n} arquivo(s) salvo(s) no local escolhido.` };
+      }
+    } catch (e) { if (e && e.name === 'AbortError') return null; throw { code: 'other', message: 'Não foi possível salvar: ' + (e && e.message || e) }; }
+    // sem seletor de pasta/arquivo: baixa novamente (Downloads) e sugere compartilhar
+    for (const o of lastOut) { const a = document.createElement('a'); a.href = URL.createObjectURL(o.blob); a.download = o.name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 30000); await new Promise(r => setTimeout(r, 300)); }
+    return { message: 'Este navegador não permite escolher a pasta; os arquivos foram baixados de novo para Downloads. Para enviar a outro lugar, use “Compartilhar”.' };
   }
 
   const stemOf = (k) => k.split('/').pop().replace(/\.pdf$/i, '');
@@ -82,6 +128,7 @@
   }
 
   async function extract(r) {
+    lastOut = []; pendingSave = [];
     const key = r.path;
     const opts = {
       force_ocr: !!r.force_ocr, verify_numbers: !!r.verify_numbers, ocr_images: !!r.ocr_images,
@@ -118,6 +165,7 @@
   }
 
   async function processReq(r) {
+    lastOut = []; pendingSave = [];
     const keys = r.sources.map(s => s.path);
     const req = { entries: r.entries, compress: r.compress, split_mb: r.split_mb, reserve_kb: r.reserve_kb, on_oversize: r.on_oversize, base_name: r.base_name };
     const res = await call('process', { keys, passwords: r.sources.map(s => s.password || null), req });
@@ -143,6 +191,8 @@
         if (cmd === 'api') return handlers[args.name](args.payload);
         if (cmd === 'pick_files') return pickFiles(args.multiple);
         if (cmd === 'pick_folder') return pickFolder();
+        if (cmd === 'share_outputs') return shareOutputs();
+        if (cmd === 'save_outputs_elsewhere') return saveOutputsElsewhere();
         if (cmd === 'reveal') return null;
         throw new Error('comando desconhecido: ' + cmd);
       },

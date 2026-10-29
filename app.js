@@ -76,7 +76,7 @@ async function addSource(path, insertAt /* índice na lista de entries ou null *
   if (insertAt == null) S.entries.push(...news); else S.entries.splice(insertAt, 0, ...news);
   if (idx === 0) {
     $('#base-name').value = oldAce(stem(path));
-    S.outDir = IS_WEB ? '' : dirOf(path); $('#out-dir').value = S.outDir;
+    if (!IS_WEB && !S.outManual) { S.outDir = dirOf(path); $('#out-dir').value = S.outDir; }
   }
   render();
   return news.length;
@@ -320,7 +320,7 @@ document.addEventListener('keydown', ev => {
 $('#split-on').addEventListener('change', syncSplit);
 function syncSplit() { const on = $('#split-on').checked; $('#split-mb').disabled = !on; $$('input[name=oversize]').forEach(r => r.disabled = !on); }
 syncSplit();
-$('#btn-outdir').onclick = async () => { const d = await invoke('pick_folder', {}); if (d) { S.outDir = d; $('#out-dir').value = d; } };
+$('#btn-outdir').onclick = async () => { const d = await invoke('pick_folder', {}); if (d) { S.outDir = d; S.outManual = true; $('#out-dir').value = d; } };
 
 function toast(kind, text, target = '#result-org') {
   $(target).innerHTML = `<div class="msg ${kind}" role="${kind === 'err' ? 'alert' : 'status'}">${esc(text)}</div>`;
@@ -378,6 +378,31 @@ async function run() {
     showDone(res); return;
   }
 }
+/* ---------- salvar em outro local / compartilhar (depois de processar) ---------- */
+function outputButtons(files) {
+  const canShare = IS_WEB && typeof navigator.canShare === 'function' && typeof navigator.share === 'function';
+  return `<div class="out-actions"><button type="button" class="act-save">Salvar em outro local…</button>` +
+    (canShare ? `<button type="button" class="act-share">Compartilhar…</button>` : '') + `</div>`;
+}
+function wireOutputButtons(box, files) {
+  const note = msg => { let n = box.querySelector('.out-note'); if (!n) { n = document.createElement('div'); n.className = 'msg out-note'; n.setAttribute('role', 'status'); box.appendChild(n); } n.textContent = msg; };
+  const sv = box.querySelector('.act-save'), sh = box.querySelector('.act-share');
+  if (sv) sv.onclick = async () => {
+    try {
+      let r;
+      if (IS_WEB) r = await invoke('save_outputs_elsewhere', {});
+      else {
+        const d = await invoke('pick_folder', {}); if (!d) return;
+        const out = await invoke('copy_files', { paths: files.map(f => f.path), dest: d }); r = { where: d, count: out.length };
+      }
+      if (r) note(r.message || `${r.count} arquivo(s) salvo(s) em ${r.where}.`);
+    } catch (e) { note(errMsg(e)); }
+  };
+  if (sh) sh.onclick = async () => {
+    try { const r = await invoke('share_outputs', {}); if (r && r.message) note(r.message); } catch (e) { note(errMsg(e)); }
+  };
+}
+
 function showDone(r) {
   const saved = r.original_bytes ? Math.round((1 - r.total_bytes / r.original_bytes) * 100) : 0;
   const rows = r.files.map(f => `<tr><td>${esc(f.name)}</td><td>${f.first_page}–${f.last_page}</td><td class="${f.oversize ? 'over' : ''}">${mb(f.bytes)}${f.oversize ? ' ⚠ acima do limite' : ''}</td></tr>`).join('');
@@ -385,8 +410,9 @@ function showDone(r) {
   $('#result-org').innerHTML = `<div class="msg ok"><strong>Concluído.</strong> ${r.files.length} arquivo${r.files.length > 1 ? 's' : ''}, ${mb(r.total_bytes)} no total (original: ${mb(r.original_bytes)}${saved > 0 ? `, redução de ${saved}%` : ''}).` +
     `${r.level_used ? ` Compactação: ${esc(r.level_used)}; ${r.images_recompressed} imagem(ns) recomprimida(s).` : ''}</div>` +
     `<table><thead><tr><th>Arquivo</th><th>Págs.</th><th>Tamanho</th></tr></thead><tbody>${rows}</tbody></table>${warn}` +
-    `<p><button id="btn-reveal">Mostrar na pasta</button></p>`;
+    `<p><button id="btn-reveal">Mostrar na pasta</button></p><div id="out-org">${outputButtons(r.files)}</div>`;
   $('#btn-reveal').onclick = () => invoke('reveal', { path: r.files[0].path }).catch(() => { });
+  wireOutputButtons($('#out-org'), r.files);
 }
 $('#btn-run').onclick = () => run().catch(e => { setBusy('org', false); toast('err', errMsg(e)); });
 
@@ -455,8 +481,9 @@ function showExt(r) {
   const div = r.divergent_numbers ? `<div class="msg warn">${r.divergent_numbers} número(s) divergiram entre duas leituras de OCR e estão listados no arquivo. Confira-os no PDF original.</div>` : '';
   const ocrNote = r.ocr ? `<div class="msg warn">${r.ocr} página(s) foram lidas por OCR e podem conter erros em números, datas, valores e nomes. Confira no original antes de usar.</div>` : '';
   $('#result-ext').innerHTML = `<div class="msg ok"><strong>Concluído.</strong> ${r.pages} página(s): ${r.digital} com texto digital, ${r.ocr} por OCR, ${r.empty} vazia(s)${conf}.</div>${alerts}${none}${perr}${hid}${imgs}${div}${ocrNote}` +
-    `<table><thead><tr><th>Arquivo</th><th>Tamanho</th></tr></thead><tbody>${files}</tbody></table><p><button id="btn-reveal2">Mostrar na pasta</button></p>`;
+    `<table><thead><tr><th>Arquivo</th><th>Tamanho</th></tr></thead><tbody>${files}</tbody></table><p><button id="btn-reveal2">Mostrar na pasta</button></p><div id="out-ext">${outputButtons(r.files)}</div>`;
   $('#btn-reveal2').onclick = () => invoke('reveal', { path: r.files[0].path }).catch(() => { });
+  wireOutputButtons($('#out-ext'), r.files);
 }
 
 /* ---------- configurações (paletas de cores) ---------- */

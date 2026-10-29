@@ -13,7 +13,7 @@
 </head>
 <body>
 <header class="top">
-  <div class="brand">PDF Old Ace</div>
+  <div class="brand" aria-label="PDF Old Ace"><span class="b-pd">PD</span><span class="b-f">F Old Ace</span></div>
   <button id="btn-install" class="primary install" hidden title="Instala o app neste computador para uso off-line">Instalar no computador</button>
   <nav class="tabs" role="tablist">
     <button role="tab" class="tab active" data-tab="org" aria-selected="true">Organizar e compactar</button>
@@ -212,8 +212,14 @@
       <li>Na divisão: <code>contrato_OldAce_parte_01_de_03.pdf</code>, <code>…_parte_02_de_03.pdf</code> e assim por diante.</li>
       <li>Os arquivos de extração seguem a mesma regra: <code>contrato_OldAce.md</code>, <code>.txt</code>, <code>.json</code>.</li>
       <li>Você pode editar o campo <em>Nome do arquivo</em>.</li>
-      <li><strong>Windows:</strong> a pasta de saída sugerida é a do PDF de origem; troque em <em>Escolher…</em> se quiser. Se já existir arquivo com o mesmo nome, o app cria um nome novo em vez de sobrescrever.</li>
-      <li><strong>Navegador (inclusive no celular):</strong> o navegador não informa a pasta do arquivo de origem. Os arquivos vão para a pasta Downloads, ou para uma pasta escolhida quando o navegador permite (isso varia: no celular costuma ir sempre para Downloads).</li>
+      <li><strong>Windows:</strong> a pasta de saída sugerida é automaticamente a do PDF de origem (em organizar, compactar, dividir e extrair); troque em <em>Escolher…</em> se quiser. Se já existir arquivo com o mesmo nome, o app cria um nome novo em vez de sobrescrever.</li>
+      <li><strong>Navegador (inclusive no celular):</strong> o navegador não informa a pasta do arquivo de origem. Os arquivos vão para a pasta Downloads, ou para uma pasta escolhida quando o navegador permite (isso varia: no celular costuma ir sempre para Downloads). Para guardar ou enviar a outro lugar, use os botões abaixo.</li>
+    </ul>
+
+    <p><strong>Salvar em outro local e compartilhar.</strong> Depois de processar (organizar, compactar, dividir ou extrair), aparecem dois botões abaixo da lista de arquivos, que valem para os arquivos recém-gerados:</p>
+    <ul>
+      <li><strong>Salvar em outro local…</strong>: no Windows, abre a escolha de pasta e copia os arquivos para lá (sem sobrescrever). No navegador de computador (Chrome/Edge), pede uma pasta e grava nela; em outros navegadores pede onde salvar cada arquivo; se o navegador não oferecer isso (comum no celular), baixa os arquivos de novo para Downloads.</li>
+      <li><strong>Compartilhar…</strong> (só no navegador, quando o aparelho permite): abre a lista de aplicativos do aparelho (WhatsApp, e-mail, Drive, Arquivos etc.) para enviar ou guardar os arquivos. Não aparece no Windows.</li>
     </ul>
 
     <h3 id="m-ext">6. Extrair texto para IA</h3>

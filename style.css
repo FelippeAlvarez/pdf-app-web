@@ -116,4 +116,11 @@ button.on{background:var(--accent);color:var(--accent-text);border-color:var(--a
   .about dl{grid-template-columns:1fr}
 }
 
+.brand .b-pd{color:#000}.brand .b-f{color:#d40000}
+.brand span{letter-spacing:.2px}
+@media (prefers-color-scheme:dark){:root:not([data-palette]) .brand span{text-shadow:-1px -1px 0 #fff,1px -1px 0 #fff,-1px 1px 0 #fff,1px 1px 0 #fff,0 -1px 0 #fff,0 1px 0 #fff,-1px 0 0 #fff,1px 0 0 #fff}}
+:root[data-dark] .brand span{text-shadow:-1px -1px 0 #fff,1px -1px 0 #fff,-1px 1px 0 #fff,1px 1px 0 #fff,0 -1px 0 #fff,0 1px 0 #fff,-1px 0 0 #fff,1px 0 0 #fff}
+.out-actions{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}
+.out-note{margin-top:6px}
+
 #btn-reveal,#btn-reveal2{display:none}
