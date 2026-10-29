@@ -9,6 +9,8 @@ const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const baseName = p => p.split(/[\\/]/).pop();
 const stem = p => baseName(p).replace(/\.pdf$/i, '');
+const oldAce = n => n.replace(/_OldAce$/i, '') + '_OldAce';
+const IS_WEB = !!window.PDF_OLD_ACE_WEB;
 const dirOf = p => p.slice(0, Math.max(p.lastIndexOf('\\'), p.lastIndexOf('/')));
 const mb = b => b < 1048576 ? Math.max(1, Math.round(b / 1024)) + ' KB' : (b / 1048576).toFixed(2).replace('.', ',') + ' MB';
 const errMsg = e => (e && e.message) ? e.message : String(e);
@@ -73,8 +75,8 @@ async function addSource(path, insertAt /* índice na lista de entries ou null *
   const news = Array.from({ length: info.pages }, (_, i) => ({ id: S.nextId++, src: idx, page: i + 1, rot: 0 }));
   if (insertAt == null) S.entries.push(...news); else S.entries.splice(insertAt, 0, ...news);
   if (idx === 0) {
-    $('#base-name').value = stem(path) + '_editado';
-    S.outDir = ''; $('#out-dir').value = '';
+    $('#base-name').value = oldAce(stem(path));
+    S.outDir = IS_WEB ? '' : dirOf(path); $('#out-dir').value = S.outDir;
   }
   render();
 }
@@ -234,7 +236,7 @@ function buildRequest(onOversize) {
     reserve_kb: parseFloat($('#reserve-kb').value) || 0,
     on_oversize: onOversize,
     out_dir: S.outDir || dirOf(S.sources[0].path),
-    base_name: ($('#base-name').value || stem(S.sources[0].path) + '_editado').replace(/[\\/:*?"<>|]/g, '_'),
+    base_name: ($('#base-name').value || oldAce(stem(S.sources[0].path))).replace(/[\\/:*?"<>|]/g, '_'),
   };
 }
 
@@ -285,16 +287,17 @@ $('#btn-run').onclick = () => run().catch(e => { setBusy('org', false); toast('e
 
 /* ---------- extrair ---------- */
 window.addEventListener('pdfapp-progress', e => { const t = $('#busy-ext-text'); if (t) t.textContent = e.detail; });
-let extPath = null, extPassword = null, extOut = '';
+let extPath = null, extPassword = null, extOut = '', extOutManual = false;
 $('#btn-ext-open').onclick = async () => {
   const f = await invoke('pick_files', { multiple: false }); if (!f || !f.length) return;
   const got = await openWithPassword(f[0]).catch(e => { toast('err', errMsg(e), '#result-ext'); return null; });
   if (!got) return;
   extPath = f[0]; extPassword = got.password;
+  if (!IS_WEB && !extOutManual) { extOut = dirOf(f[0]); $('#ext-out').value = extOut; }
   $('#ext-file').textContent = `${baseName(f[0])} — ${got.info.pages} página(s)`;
   $('#btn-ext-run').disabled = false; $('#result-ext').innerHTML = '';
 };
-$('#btn-ext-outdir').onclick = async () => { const d = await invoke('pick_folder', {}); if (d) { extOut = d; $('#ext-out').value = d; } };
+$('#btn-ext-outdir').onclick = async () => { const d = await invoke('pick_folder', {}); if (d) { extOut = d; extOutManual = true; $('#ext-out').value = d; } };
 $('#btn-ext-run').onclick = async () => {
   const formats = $$('.fmt').filter(c => c.checked).map(c => c.value);
   if (!formats.length) { toast('err', 'Escolha ao menos um formato.', '#result-ext'); return; }
@@ -350,3 +353,31 @@ function showExt(r) {
     `<table><thead><tr><th>Arquivo</th><th>Tamanho</th></tr></thead><tbody>${files}</tbody></table><p><button id="btn-reveal2">Mostrar na pasta</button></p>`;
   $('#btn-reveal2').onclick = () => invoke('reveal', { path: r.files[0].path }).catch(() => { });
 }
+
+/* ---------- configurações (paletas de cores) ---------- */
+(function () {
+  const groups = { claras: '#pal-claras', escuras: '#pal-escuras', 'alto contraste': '#pal-alto' };
+  const mk = (p) => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'pal-b'; b.setAttribute('role', 'radio'); b.dataset.pal = p.id; b.textContent = p.name;
+    if (p.v) { b.style.background = p.v.bg; b.style.color = p.v.text; b.style.borderColor = p.v.accent; }
+    return b;
+  };
+  const auto = mk({ id: 'auto', name: 'Automático', v: null });
+  $('#pal-auto').appendChild(auto);
+  PALETTES.forEach(p => $(groups[p.group]).appendChild(mk(p)));
+  const mark = () => $$('.pal-b').forEach(b => b.setAttribute('aria-checked', String(b.dataset.pal === palGet())));
+  mark();
+  $('#settings').addEventListener('click', (e) => {
+    const b = e.target.closest('.pal-b');
+    if (b) { palSet(b.dataset.pal); applyPalette(b.dataset.pal); mark(); }
+    if (e.target.id === 'settings') close();
+  });
+  let opener = null;
+  const open = () => { opener = document.activeElement; $('#settings').hidden = false; $('#settings-close').focus(); };
+  const close = () => { $('#settings').hidden = true; if (opener) opener.focus(); };
+  $('#btn-settings').onclick = open;
+  $('#settings-close').onclick = close;
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !$('#settings').hidden) close(); });
+  $('#settings-about').onclick = () => { close(); const t = document.querySelector('.tab[data-tab=about]'); if (t) t.click(); };
+})();

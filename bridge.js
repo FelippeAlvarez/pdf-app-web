@@ -2,6 +2,7 @@
 // seletor de arquivos do navegador e OCR via tesseract.js. Nenhum arquivo sai do computador.
 (function () {
   'use strict';
+  window.PDF_OLD_ACE_WEB = true;
   const worker = new Worker('worker.js', { type: 'module' });
   let seq = 0; const pending = new Map();
   worker.onmessage = (ev) => {
@@ -110,7 +111,7 @@
     const mimes = { md: 'text/markdown', txt: 'text/plain', json: 'application/json' };
     const out = [];
     for (const f of r.formats) {
-      const n = await saveFile(r.out_dir, stemOf(key) + '.' + f, new TextEncoder().encode(fin[f]), mimes[f] + ';charset=utf-8');
+      const n = await saveFile(r.out_dir, stemOf(key).replace(/_OldAce$/i, '') + '_OldAce.' + f, new TextEncoder().encode(fin[f]), mimes[f] + ';charset=utf-8');
       out.push({ name: n, path: n, first_page: 1, last_page: fin.pages, bytes: new TextEncoder().encode(fin[f]).length, oversize: false });
     }
     return { files: out, pages: fin.pages, digital: fin.digital, ocr: fin.ocr, empty: fin.empty, divergent_numbers: fin.divergent_numbers, mean_conf: fin.mean_conf, alerts: fin.alerts, alert_items: fin.alert_items, pattern_errors: fin.pattern_errors, images: fin.images, hidden_blocks: fin.hidden_blocks };

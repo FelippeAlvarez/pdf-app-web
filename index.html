@@ -8,6 +8,8 @@
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#1f5fbf">
 <link rel="icon" href="icons/icon-192.png">
+<script src="palettes-data.js"></script>
+<script src="palettes.js"></script>
 </head>
 <body>
 <header class="top">
@@ -18,6 +20,7 @@
     <button role="tab" class="tab" data-tab="ext" aria-selected="false">Extrair texto para IA</button>
     <button role="tab" class="tab" data-tab="about" aria-selected="false">Sobre</button>
   </nav>
+  <button id="btn-settings" class="icon-btn" title="Configurações" aria-label="Configurações" aria-haspopup="dialog">⚙</button>
 </header>
 
 <main>
@@ -81,7 +84,7 @@
         <div class="row"><input id="out-dir" readonly placeholder="Mesma pasta do PDF"><button id="btn-outdir" type="button">Escolher…</button></div>
       </label>
       <label class="field">Nome do arquivo
-        <input id="base-name" placeholder="nome_editado">
+        <input id="base-name" placeholder="nome_OldAce">
       </label>
 
       <button id="btn-run" class="primary big" disabled>Processar</button>
@@ -139,8 +142,8 @@
   <div class="card-box about">
     <h2>PDF Old Ace</h2>
     <dl>
-      <dt>Versão</dt><dd id="app-version">0.4.0</dd>
-      <dt>Copyright</dt><dd>© Felippe Alvarez. Todos os direitos reservados. <span class="pending">Pendente: confirmar o titular (pessoa ou escritório) e o ano.</span></dd>
+      <dt>Versão</dt><dd id="app-version">0.5.0</dd>
+      <dt>Copyright</dt><dd>© 2026 Felippe Alvarez. Todos os direitos reservados.</dd>
       <dt>Licença do aplicativo</dt><dd><span class="pending">Pendente</span> — definir a licença (por ora: uso interno; sem distribuição a terceiros).</dd>
       <dt>Contato / suporte</dt><dd><span class="pending">Pendente</span> — informar e-mail ou canal de suporte.</dd>
     </dl>
@@ -159,7 +162,7 @@
       <ol>
         <li>O processamento é feito no próprio aparelho. Os arquivos PDF e os textos extraídos não são enviados a servidores.</li>
         <li>O programa não coleta estatísticas de uso nem usa rastreadores.</li>
-        <li>Ficam guardados apenas no aparelho as preferências e a lista de padrões de alerta (armazenamento local do programa/navegador).</li>
+        <li>Ficam guardados apenas no aparelho as preferências (inclusive a paleta de cores escolhida) e a lista de padrões de alerta (armazenamento local do programa/navegador).</li>
         <li>Na versão para navegador, o carregamento inicial do site e das atualizações é feito pelo serviço de hospedagem (GitHub Pages), que pode registrar o acesso (como o endereço IP). Depois de instalada, a versão para navegador funciona sem conexão.</li>
         <li>Os arquivos gerados (.md, .txt, .json) contêm o texto do documento; protegê-los é responsabilidade do usuário, inclusive antes de enviá-los a qualquer serviço de IA.</li>
       </ol>
@@ -183,6 +186,8 @@
         <li><strong>Compactar e dividir:</strong> escolha o nível de compactação e, se quiser, o tamanho máximo de cada parte. Os dois são feitos de uma vez. Se alguma página sozinha passar do limite, o app avisa antes de gerar.</li>
         <li><strong>Processar:</strong> os arquivos são gravados na pasta de saída. O original nunca é alterado.</li>
         <li><strong>Extrair texto para IA:</strong> gera .md, .txt e/ou .json. O .md começa com o resumo de integridade (SHA-256, data, versão), a varredura de conteúdo oculto (sempre exibida, mesmo quando nada é encontrado), a lista de imagens e os alertas. Em seguida vem o texto por página, com negrito, itálico e sublinhado preservados.</li>
+        <li><strong>Cores:</strong> toque na engrenagem (canto superior), em Configurações, e escolha uma paleta pronta. Cada botão mostra as cores da própria paleta. Automático segue o tema do aparelho.</li>
+        <li><strong>Nomes e pasta:</strong> os arquivos gerados terminam em <code>_OldAce</code> (divisões: <code>_OldAce_parte_01_de_03</code>). No Windows, a pasta de saída sugerida é a do PDF de origem e pode ser trocada. No navegador, os arquivos vão para Downloads ou para a pasta escolhida.</li>
         <li><strong>Imagens:</strong> aparecem como <code>[IMAGEM p.X – conteúdo não extraído]</code>. Marque a leitura de imagens por OCR para transcrevê-las como “texto de imagem (OCR)”.</li>
         <li><strong>Alertas:</strong> frases que parecem dirigidas a uma IA são listadas com página, frase completa, regra acionada e gravidade (alta, média, baixa). Edite as regras em <em>Padrões de alerta</em>.</li>
         <li><strong>Conferência:</strong> em PDFs escaneados o texto vem de OCR e pode conter erros. <strong>Confira números, datas, valores, CPF/CNPJ e nomes no PDF original</strong>; o app lista os números que divergiram entre duas leituras. Trechos ilegíveis nunca são completados.</li>
@@ -199,6 +204,19 @@
     <h3 id="modal-title"></h3>
     <div id="modal-body"></div>
     <div id="modal-actions" class="actions"></div>
+  </div>
+</div>
+<div id="settings" class="overlay" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+    <div class="sheet-head"><h2 id="settings-title">Configurações</h2><button id="settings-close" aria-label="Fechar">✕</button></div>
+    <h3>Cores</h3>
+    <p class="hint">Escolha uma paleta pronta. A escolha fica só neste aparelho. Automático segue o tema do aparelho.</p>
+    <div id="pal-auto" class="pal" role="radiogroup" aria-label="Automático"></div>
+    <p class="pal-h">Claras</p><div id="pal-claras" class="pal" role="radiogroup" aria-label="Paletas claras"></div>
+    <p class="pal-h">Escuras</p><div id="pal-escuras" class="pal" role="radiogroup" aria-label="Paletas escuras"></div>
+    <p class="pal-h">Alto contraste</p><div id="pal-alto" class="pal" role="radiogroup" aria-label="Paletas de alto contraste"></div>
+    <h3>Mais</h3>
+    <div class="row"><button id="settings-about" type="button">Manual, termos e sobre</button></div>
   </div>
 </div>
 <script src="ocr/tesseract.min.js"></script>
