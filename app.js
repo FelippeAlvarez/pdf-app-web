@@ -514,3 +514,13 @@ function showExt(r) {
   $('#settings-about').onclick = () => { close(); const t = document.querySelector('.tab[data-tab=manual]'); if (t) t.click(); };
   const gm = $('#go-manual'); if (gm) gm.onclick = ev => { ev.preventDefault(); const t = document.querySelector('.tab[data-tab=manual]'); if (t) t.click(); };
 })();
+
+(function notices() {
+  const b = $('#btn-notices'), pre = $('#notices'); if (!b || !pre) return;
+  b.onclick = async () => {
+    if (!pre.hidden) { pre.hidden = true; return; }
+    try { const r = await fetch('THIRD-PARTY-NOTICES.txt'); if (!r.ok) throw 0; pre.textContent = await r.text(); }
+    catch (_) { pre.textContent = 'Não foi possível carregar a lista de licenças de terceiros.'; }
+    pre.hidden = false; pre.scrollIntoView({ block: 'nearest' });
+  };
+})();

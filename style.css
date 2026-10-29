@@ -123,4 +123,7 @@ button.on{background:var(--accent);color:var(--accent-text);border-color:var(--a
 .out-actions{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}
 .out-note{margin-top:6px}
 
+.linkish{background:none;border:0;padding:0;color:var(--accent);text-decoration:underline;cursor:pointer;font:inherit}
+.notices{max-height:60vh;overflow:auto;white-space:pre-wrap;font-size:12px;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px;margin-top:10px}
+
 #btn-reveal,#btn-reveal2{display:none}

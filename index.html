@@ -297,9 +297,26 @@
     <dl>
       <dt>Versão</dt><dd id="app-version">0.5.0</dd>
       <dt>Copyright</dt><dd>© 2026 Felippe Alvarez. Todos os direitos reservados.</dd>
-      <dt>Licença do aplicativo</dt><dd><span class="pending">Pendente</span> — definir a licença (por ora: uso interno; sem distribuição a terceiros).</dd>
+      <dt>Licença do aplicativo</dt><dd>Licença de uso proprietária, de uso restrito (minuta abaixo). Titular: Felippe Alvarez.</dd>
       <dt>Contato / suporte</dt><dd><span class="pending">Pendente</span> — informar e-mail ou canal de suporte.</dd>
     </dl>
+    <details class="manual">
+      <summary><strong>Licença de uso</strong> <span class="pending">minuta — revisar antes de distribuir</span></summary>
+      <p class="hint">© 2026 Felippe Alvarez. Todos os direitos reservados.</p>
+      <ol>
+        <li><strong>Titularidade.</strong> O PDF Old Ace (o “Programa”) é de titularidade de Felippe Alvarez (o “Titular”), que detém todos os direitos sobre ele, nos termos da legislação brasileira de direitos autorais e de programas de computador. Esta licença não transfere ao usuário a propriedade do Programa nem de qualquer parte dele.</li>
+        <li><strong>Concessão.</strong> O Titular concede ao usuário autorizado uma licença de uso pessoal, não exclusiva, intransferível, revogável e sem caráter de venda, para instalar e usar o Programa em seus próprios aparelhos, para fins profissionais ou pessoais lícitos. Considera-se usuário autorizado a pessoa a quem o Titular, por escrito ou por meio de comunicação do link ou do instalador, permitiu o uso. <span class="pending">Pendente: definir se o uso é gratuito ou oneroso e o número de aparelhos por usuário.</span></li>
+        <li><strong>Restrições.</strong> Sem autorização prévia e escrita do Titular, é vedado: (a) copiar o Programa, salvo para as cópias necessárias ao uso e para segurança; (b) distribuir, publicar, vender, alugar, emprestar ou sublicenciar o Programa, o instalador ou o link de acesso a terceiros não autorizados; (c) modificar o Programa ou criar obras derivadas; (d) realizar engenharia reversa, descompilar ou desmontar o Programa, exceto nas hipóteses em que a lei não permite vedar; (e) remover ou alterar avisos de copyright, licença ou autoria.</li>
+        <li><strong>Componentes de terceiros.</strong> O Programa utiliza componentes de terceiros, regidos por suas próprias licenças, listadas em “Licenças de terceiros” (aba Sobre). Esta licença não altera esses termos, nem concede direitos sobre tais componentes além dos que as respectivas licenças já concedem.</li>
+        <li><strong>Documentos e dados.</strong> O Programa processa os arquivos no próprio aparelho e não os envia a servidores do Titular. O usuário é responsável por ter autorização para tratar os documentos que processa, inclusive os que contenham dados pessoais ou sigilosos, e por proteger os arquivos gerados.</li>
+        <li><strong>Resultados.</strong> O resultado de compactação, organização e, principalmente, de extração de texto e de OCR pode conter erros ou omissões. O usuário deve conferir os resultados com os documentos originais antes de utilizá-los. Os alertas e a varredura de conteúdo oculto são heurísticos e não garantem a ausência de conteúdo malicioso.</li>
+        <li><strong>Ausência de garantia e responsabilidade.</strong> O Programa é fornecido “no estado em que se encontra”, sem garantias de qualquer espécie, expressas ou implícitas, nos limites da lei. Nos limites da lei, o Titular não responde por danos indiretos, lucros cessantes ou perda de dados decorrentes do uso ou da impossibilidade de uso do Programa.</li>
+        <li><strong>Atualizações e suporte.</strong> O Titular não tem obrigação de fornecer atualizações, correções ou suporte, e pode alterar ou descontinuar o Programa a qualquer momento.</li>
+        <li><strong>Vigência e extinção.</strong> Esta licença vigora por prazo indeterminado e pode ser revogada pelo Titular a qualquer tempo, mediante aviso ao usuário. O descumprimento destes termos a extingue automaticamente. Extinta a licença, o usuário deve cessar o uso e apagar as cópias do Programa.</li>
+        <li><strong>Lei aplicável e foro.</strong> Aplica-se a lei brasileira. <span class="pending">Pendente: definir o foro, por exemplo o da comarca da sede do Titular.</span></li>
+        <li><strong>Contato.</strong> <span class="pending">Pendente: informar e-mail ou canal para pedidos de autorização e suporte.</span></li>
+      </ol>
+    </details>
     <details class="manual">
       <summary><strong>Termos de uso</strong> <span class="pending">minuta — revisar antes de distribuir</span></summary>
       <ol>
@@ -329,8 +346,9 @@
       <li><strong>wasm-bindgen</strong> (versão para navegador) — MIT / Apache-2.0</li>
       <li><strong>Tesseract OCR</strong> e dados de idioma <em>tessdata_fast</em> (português) — Apache-2.0</li>
       <li><strong>tesseract.js</strong> (OCR no navegador) — Apache-2.0</li>
-      <li>Demais dependências transitivas em Rust, com licenças permissivas (MIT/Apache-2.0), listadas em <code>Cargo.lock</code>. <span class="pending">Pendente: gerar o arquivo THIRD-PARTY-NOTICES completo antes de distribuir.</span></li>
+      <li>Demais dependências em Rust, com licenças permissivas (MIT, Apache-2.0, BSD, Zlib e semelhantes; algumas, só no app Windows, em MPL-2.0). A lista completa, com os textos das licenças, está em <button type="button" id="btn-notices" class="linkish">Licenças de terceiros</button>. <span class="pending">Pendente: conferir as DLLs do Tesseract no instalador do Windows.</span></li>
     </ul>
+    <pre id="notices" class="notices" hidden></pre>
     <h3>Manual de uso</h3>
     <p>O manual completo está na aba <a href="#" id="go-manual">Manual</a>.</p>
   </div>
