@@ -71,7 +71,7 @@ async function addSource(path, insertAt /* índice na lista de entries ou null *
   $('#banner-signed').hidden = !info.signed;
   if (info.signed) { toast('err', 'O arquivo "' + baseName(path) + '" possui assinatura digital e não pode ser processado; foi ignorado.'); return 0; }
   const idx = S.sources.length;
-  S.sources.push({ path, password, pages: info.pages, name: baseName(path), form: info.has_form, size: info.size_bytes });
+  S.sources.push({ path, password, pages: info.pages, name: baseName(path), form: info.has_form, size: info.size_bytes, enc: info.encrypted });
   const news = Array.from({ length: info.pages }, (_, i) => ({ id: S.nextId++, src: idx, page: i + 1, rot: 0 }));
   if (insertAt == null) S.entries.push(...news); else S.entries.splice(insertAt, 0, ...news);
   if (idx === 0) {
@@ -318,6 +318,7 @@ document.addEventListener('keydown', ev => {
 
 /* ---------- saída ---------- */
 $('#split-on').addEventListener('change', syncSplit);
+$('#pdfa-on').addEventListener('change', () => { $('#pdfa-opts').hidden = !$('#pdfa-on').checked; });
 function syncSplit() { const on = $('#split-on').checked; $('#split-mb').disabled = !on; $$('input[name=oversize]').forEach(r => r.disabled = !on); }
 syncSplit();
 $('#btn-outdir').onclick = async () => { const d = await invoke('pick_folder', {}); if (d) { S.outDir = d; S.outManual = true; $('#out-dir').value = d; } };
@@ -330,7 +331,7 @@ function setBusy(which, on, text) {
   S.busy = on; $('#btn-run').disabled = on || !S.entries.length; $('#btn-ext-run').disabled = on || !extPath;
 }
 
-function buildRequest(onOversize) {
+function buildRequest(onOversize, rasterOk) {
   const splitOn = $('#split-on').checked;
   const splitMb = parseFloat(String($('#split-mb').value).replace(',', '.'));
   return {
@@ -342,6 +343,7 @@ function buildRequest(onOversize) {
     on_oversize: onOversize,
     out_dir: S.outDir || dirOf(S.sources[0].path),
     base_name: ($('#base-name').value || oldAce(stem(S.sources[0].path))).replace(/[\\/:*?"<>|]/g, '_'),
+    pdfa: { enabled: $('#pdfa-on').checked, allow_raster: !!rasterOk, dpi: 200, title: ($('#base-name').value || oldAce(stem(S.sources[0].path))).replace(/[\\/:*?"<>|]/g, '_') },
   };
 }
 
@@ -352,13 +354,29 @@ async function run() {
     if (!(v > 0)) { toast('err', 'Informe um tamanho máximo maior que zero.'); return; }
   }
   let policy = $('input[name=oversize]:checked').value;
+  let rasterOk = $('#pdfa-on').checked && $('#pdfa-raster').checked;
+  if ($('#pdfa-on').checked && S.sources.some(x => x.enc)) {
+    const names = S.sources.filter(x => x.enc).map(x => `<li>${esc(x.name)}</li>`).join('');
+    const r = await modal('Proteção do arquivo será removida',
+      `<p>O PDF/A não admite criptografia. Para gerar o PDF/A, o app vai <strong>remover a proteção</strong> (restrições de edição, cópia ou impressão) <strong>no arquivo gerado</strong>. O arquivo original não é alterado.</p><ul>${names}</ul><p class="hint">Faça isso apenas com documentos que você tem o direito de alterar.</p>`,
+      [{ label: 'Cancelar', value: 'cancel' }, { label: 'Remover a proteção e continuar', value: 'ok', primary: true }]);
+    if (r.value !== 'ok') { toast('warn', 'Processamento cancelado. Nenhum arquivo foi gerado.'); return; }
+  }
   for (;;) {
     setBusy('org', true, 'Processando… PDFs grandes podem levar alguns minutos.');
     $('#result-org').innerHTML = '';
     let res;
-    try { res = await api('process', buildRequest(policy)); }
+    try { res = await api('process', buildRequest(policy, rasterOk)); }
     catch (e) { setBusy('org', false); toast('err', errMsg(e)); return; }
     setBusy('org', false);
+    if (res.status === 'needs_pdfa_decision') {
+      const list = res.pages.map(o => `<li>página ${o.page}: ${esc(o.reason)}</li>`).join('');
+      const r = await modal('Páginas que só viram PDF/A como imagem',
+        `<p>O app não consegue converter estas páginas para PDF/A sem transformá-las em imagem:</p><ul>${list}</ul><p class="hint">Convertida em imagem (200 dpi), a página mantém a aparência, mas o texto dela deixa de ser selecionável e pesquisável, links e campos de formulário dela se perdem e o arquivo cresce. As demais páginas não mudam.</p>`,
+        [{ label: 'Cancelar', value: 'cancel' }, { label: 'Converter essas páginas em imagem', value: 'raster', primary: true }]);
+      if (r.value !== 'raster') { toast('warn', 'Processamento cancelado. Nenhum arquivo foi gerado.'); return; }
+      rasterOk = true; continue;
+    }
     if (res.status === 'needs_decision') {
       const list = res.oversize.map(o => `<li>página ${o.page}: ${o.mb.toFixed(2).replace('.', ',')} MB</li>`).join('');
       const btns = [{ label: 'Cancelar', value: 'cancel' }];
@@ -397,10 +415,21 @@ function wireOutputButtons(box, files) {
   };
 }
 
+function pdfaBox(p) {
+  if (!p) return '';
+  const failed = p.checks.filter(c => !c.ok);
+  const items = p.checks.map(c => `<li class="${c.ok ? 'ck-ok' : 'ck-bad'}">${c.ok ? '✔' : '✖'} ${esc(c.name)}${c.detail ? ' — ' + esc(c.detail) : ''}</li>`).join('');
+  const fonts = p.fonts_substituted.length ? `<p><strong>Fontes substituídas por equivalentes embutidas (Liberation):</strong> ${p.fonts_substituted.map(esc).join('; ')}. A aparência das letras pode mudar um pouco.</p>` : '';
+  const ras = p.rasterized.length ? `<p><strong>Páginas convertidas em imagem:</strong></p><ul>${p.rasterized.map(x => `<li>página ${x.page}: ${esc(x.reason)}</li>`).join('')}</ul>` : '';
+  return `<details class="pdfa-box" open><summary><strong>${esc(p.level)}</strong> — autoverificação do app: ${failed.length ? `${failed.length} item(ns) com falha` : 'sem pendências nos itens conferidos'}</summary>` +
+    `<ul class="ck">${items}</ul>${fonts}${ras}` +
+    `<p class="hint">Isto é uma autoverificação do app, não uma validação oficial (como o veraPDF); a aceitação pelo cartório ou sistema de destino não é garantida. Se for assinar o arquivo, faça isso agora, em outro programa: qualquer alteração depois (inclusive neste app) invalida a assinatura.</p></details>`;
+}
+
 function showDone(r) {
   const saved = r.original_bytes ? Math.round((1 - r.total_bytes / r.original_bytes) * 100) : 0;
   const rows = r.files.map(f => `<tr><td>${esc(f.name)}</td><td>${f.first_page}–${f.last_page}</td><td class="${f.oversize ? 'over' : ''}">${mb(f.bytes)}${f.oversize ? ' ⚠ acima do limite' : ''}</td></tr>`).join('');
-  const warn = (r.warnings || []).map(w => `<div class="msg warn">${esc(w)}</div>`).join('');
+  const warn = (r.warnings || []).map(w => `<div class="msg warn">${esc(w)}</div>`).join('') + pdfaBox(r.pdfa);
   $('#result-org').innerHTML = `<div class="msg ok"><strong>Concluído.</strong> ${r.files.length} arquivo${r.files.length > 1 ? 's' : ''}, ${mb(r.total_bytes)} no total (original: ${mb(r.original_bytes)}${saved > 0 ? `, redução de ${saved}%` : ''}).` +
     `${r.level_used ? ` Compactação: ${esc(r.level_used)}; ${r.images_recompressed} imagem(ns) recomprimida(s).` : ''}</div>` +
     `<table><thead><tr><th>Arquivo</th><th>Págs.</th><th>Tamanho</th></tr></thead><tbody>${rows}</tbody></table>${warn}` +

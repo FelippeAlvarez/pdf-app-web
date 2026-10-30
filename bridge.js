@@ -167,7 +167,7 @@
   async function processReq(r) {
     lastOut = []; pendingSave = [];
     const keys = r.sources.map(s => s.path);
-    const req = { entries: r.entries, compress: r.compress, split_mb: r.split_mb, reserve_kb: r.reserve_kb, on_oversize: r.on_oversize, base_name: r.base_name };
+    const req = { entries: r.entries, compress: r.compress, split_mb: r.split_mb, reserve_kb: r.reserve_kb, on_oversize: r.on_oversize, base_name: r.base_name, pdfa: r.pdfa };
     const res = await call('process', { keys, passwords: r.sources.map(s => s.password || null), req });
     if (res.json.status !== 'done') return res.json;
     const names = [];

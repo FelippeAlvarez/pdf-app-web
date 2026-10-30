@@ -225,13 +225,6 @@ export class ProcessResult {
         }
     }
     /**
-     * @returns {number}
-     */
-    part_count() {
-        const ret = wasm.processresult_part_count(this.__wbg_ptr);
-        return ret >>> 0;
-    }
-    /**
      * @param {number} i
      * @returns {Uint8Array}
      */
@@ -247,6 +240,13 @@ export class ProcessResult {
         } finally {
             wasm.__wbindgen_add_to_stack_pointer(16);
         }
+    }
+    /**
+     * @returns {number}
+     */
+    part_count() {
+        const ret = wasm.processresult_part_count(this.__wbg_ptr);
+        return ret >>> 0;
     }
 }
 if (Symbol.dispose) ProcessResult.prototype[Symbol.dispose] = ProcessResult.prototype.free;
@@ -322,6 +322,10 @@ function __wbg_get_imports() {
         __wbg_new_1dbf7428bba60a42: function(arg0) {
             const ret = new Uint8Array(getObject(arg0));
             return addHeapObject(ret);
+        },
+        __wbg_now_aa4ccb83129e9e55: function() {
+            const ret = Date.now();
+            return ret;
         },
         __wbg_prototypesetcall_bc27214492979395: function(arg0, arg1, arg2) {
             Uint8Array.prototype.set.call(getArrayU8FromWasm0(arg0, arg1), getObject(arg2));
