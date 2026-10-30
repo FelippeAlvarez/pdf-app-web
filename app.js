@@ -351,12 +351,6 @@ async function run() {
     const v = parseFloat(String($('#split-mb').value).replace(',', '.'));
     if (!(v > 0)) { toast('err', 'Informe um tamanho máximo maior que zero.'); return; }
   }
-  const forms = S.sources.filter(s => s.form);
-  if (forms.length) {
-    const r = await modal('Formulários e links', `<p>${forms.map(s => esc(s.name)).join(', ')} contém campos de formulário. Ao reorganizar, os campos e os links internos são removidos (o texto preenchido permanece só se estiver na própria página). Continuar?</p>`,
-      [{ label: 'Cancelar', value: 'no' }, { label: 'Continuar', value: 'ok', primary: true }]);
-    if (r.value !== 'ok') return;
-  }
   let policy = $('input[name=oversize]:checked').value;
   for (;;) {
     setBusy('org', true, 'Processando… PDFs grandes podem levar alguns minutos.');

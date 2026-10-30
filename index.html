@@ -148,7 +148,7 @@
 <section id="tab-manual" class="panel">
   <div class="card-box guide">
     <h2>Manual de uso — PDF Old Ace</h2>
-    <p class="hint">Versão <span id="manual-version">0.5.0</span>. Este manual descreve o que o aplicativo faz hoje, inclusive seus limites.</p>
+    <p class="hint">Versão <span id="manual-version">0.6.0</span>. Este manual descreve o que o aplicativo faz hoje, inclusive seus limites.</p>
     <nav class="toc" aria-label="Índice do manual">
       <a href="#m-visao">1. Visão geral</a>
       <a href="#m-abrir">2. Abrir e juntar PDFs</a>
@@ -194,6 +194,7 @@
       <li><strong>◀ Mover e Mover ▶:</strong> andam uma posição para trás ou para a frente.</li>
       <li><strong>Mover para…:</strong> informe a nova posição da primeira página selecionada.</li>
     </ul>
+    <p><strong>Formulários e links.</strong> Os campos de formulário (com o texto já preenchido) e os links da página acompanham a página quando você reordena, junta ou divide. Links para outra página do mesmo arquivo continuam funcionando se a página de destino for mantida; se ela for excluída (ou, na divisão, ficar em outra parte), o link é removido (o app avisa quando a exclusão causa isso; ao dividir, a remoção é silenciosa). Ao duplicar uma página, a cópia mantém os links, mas não os campos de formulário.</p>
     <p><strong>Desfazer</strong> volta a última alteração (até 100 passos). Nada é gravado até você tocar em <em>Processar</em>.</p>
 
     <h3 id="m-comp">4. Compactar e dividir</h3>
@@ -269,7 +270,7 @@
     <h3 id="m-limites">11. Limites e cuidados</h3>
     <ul>
       <li>PDF com assinatura digital não é processado.</li>
-      <li>Ao reorganizar, campos de formulário preenchidos e links internos podem se perder.</li>
+      <li>Formulários e links: campos de formulário e links são mantidos ao reorganizar, juntar e dividir. Exceções: links para páginas excluídas (ou para outra parte, ao dividir) são removidos; ao duplicar uma página, a cópia fica sem os campos de formulário; scripts (JavaScript) de links e campos são retirados; formulários dinâmicos (XFA) perdem a parte dinâmica. Se dois arquivos juntados tiverem campos com o mesmo nome, o segundo recebe o sufixo “_2”. Confira o preenchimento no resultado antes de usar.</li>
       <li>A compactação reduz a qualidade das imagens e não é reversível: guarde o original.</li>
       <li>A extração de texto trata colunas, tabelas e hifenização por heurísticas; revise documentos com colunas ou tabelas. Parágrafos que atravessam páginas não são unidos.</li>
       <li>OCR erra, sobretudo em digitalização ruim, manuscrito e carimbos. A conferência de números ajuda, mas não elimina o erro.</li>
@@ -295,7 +296,7 @@
   <div class="card-box about">
     <h2>PDF Old Ace</h2>
     <dl>
-      <dt>Versão</dt><dd id="app-version">0.5.0</dd>
+      <dt>Versão</dt><dd id="app-version">0.6.0</dd>
       <dt>Copyright</dt><dd>© 2026 Felippe Alvarez. Todos os direitos reservados.</dd>
       <dt>Licença do aplicativo</dt><dd>Licença de uso proprietária, de uso restrito (minuta abaixo). Titular: Felippe Alvarez.</dd>
       <dt>Contato / suporte</dt><dd><span class="pending">Pendente</span> — informar e-mail ou canal de suporte.</dd>
@@ -336,6 +337,13 @@
         <li>Na versão para navegador, o carregamento inicial do site e das atualizações é feito pelo serviço de hospedagem (GitHub Pages), que pode registrar o acesso (como o endereço IP). Depois de instalada, a versão para navegador funciona sem conexão.</li>
         <li>Os arquivos gerados (.md, .txt, .json) contêm o texto do documento; protegê-los é responsabilidade do usuário, inclusive antes de enviá-los a qualquer serviço de IA.</li>
       </ol>
+    </details>
+    <details class="manual">
+      <summary><strong>Histórico de versões</strong></summary>
+      <p class="hint">Critério: MAJOR.MINOR.PATCH. O primeiro número fica em 0 durante os testes; o segundo sobe com função nova; o terceiro, com correções e ajustes. Toda entrega publicada sobe a versão.</p>
+      <p><strong>0.6.0</strong> — juntar vários PDFs; mover páginas por botões e com o dedo; links e formulários preservados; salvar em outro local e compartilhar; pasta de origem automática no Windows; novo nome e logo; aba Manual; layout para celular; licença de uso e licenças de terceiros.</p>
+      <p><strong>0.5.0</strong> — nomes terminam em _OldAce; pasta de saída sugerida; paletas de cores; copyright 2026.</p>
+      <p><strong>0.4.0</strong> — extração de texto para IA reescrita (layout, imagens, conteúdo oculto, alertas, conferência por OCR).</p>
     </details>
     <h3>Créditos e licenças de componentes</h3>
     <ul class="credits">

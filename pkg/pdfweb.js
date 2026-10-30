@@ -225,6 +225,13 @@ export class ProcessResult {
         }
     }
     /**
+     * @returns {number}
+     */
+    part_count() {
+        const ret = wasm.processresult_part_count(this.__wbg_ptr);
+        return ret >>> 0;
+    }
+    /**
      * @param {number} i
      * @returns {Uint8Array}
      */
@@ -240,13 +247,6 @@ export class ProcessResult {
         } finally {
             wasm.__wbindgen_add_to_stack_pointer(16);
         }
-    }
-    /**
-     * @returns {number}
-     */
-    part_count() {
-        const ret = wasm.processresult_part_count(this.__wbg_ptr);
-        return ret >>> 0;
     }
 }
 if (Symbol.dispose) ProcessResult.prototype[Symbol.dispose] = ProcessResult.prototype.free;
