@@ -547,3 +547,52 @@ function showExt(r) {
     pre.hidden = false; pre.scrollIntoView({ block: 'nearest' });
   };
 })();
+
+
+(function atualizacao() {
+  /* só no app de Windows: a versão do navegador (PWA) se atualiza sozinha */
+  if (IS_WEB || !T) return;
+  const sec = $('#upd-sec'); if (!sec) return;
+  sec.hidden = false;
+  const cur = ($('#manual-version') || {}).textContent || '';
+  $('#upd-cur').textContent = cur;
+  const KEY = 'oldace.autoupdate';
+  const getAuto = () => { try { return localStorage.getItem(KEY) !== '0'; } catch (_) { return true; } };
+  const setAuto = (v) => { try { localStorage.setItem(KEY, v ? '1' : '0'); } catch (_) { } };
+  $('#upd-auto').checked = getAuto();
+  $('#upd-auto').onchange = (e) => setAuto(e.target.checked);
+  let found = null;
+  const show = (m) => {
+    found = m;
+    $('#upd-new').hidden = false;
+    $('#upd-res').textContent = 'Há uma versão nova: ' + m.version + (m.published ? ' (' + m.published + ')' : '') + '.';
+    const ul = $('#upd-notes'); ul.textContent = '';
+    m.notes.forEach(n => { const li = document.createElement('li'); li.textContent = n; ul.appendChild(li); });
+    $('#upd-size').textContent = m.sizeMb ? 'cerca de ' + Math.round(m.sizeMb) + ' MB' : 'tamanho não informado';
+    $('#upd-hash').textContent = m.sha256 ? 'SHA-256 do instalador, para conferência: ' + m.sha256 : '';
+  };
+  const check = async (manual) => {
+    if (manual) { $('#upd-res').textContent = 'Verificando…'; $('#upd-new').hidden = true; }
+    try {
+      const m = await fetchManifest();
+      if (isNewer(m.version, cur)) {
+        show(m);
+        const bt = $('#update-banner-text'); bt.textContent = 'Há uma versão nova do PDF Old Ace: ' + m.version + '.';
+        $('#update-banner').hidden = false;
+      } else if (manual) {
+        $('#upd-res').textContent = 'Você está com a versão mais recente (' + cur + ').';
+      }
+    } catch (e) {
+      if (manual) $('#upd-res').textContent = 'Não foi possível verificar agora (sem internet ou site indisponível). Tente depois.';
+    }
+  };
+  $('#upd-check').onclick = () => check(true);
+  $('#upd-dl').onclick = async () => {
+    if (!found) return;
+    try { await invoke('open_download', { url: found.url }); $('#upd-res').textContent = 'O navegador foi aberto para baixar o instalador. Feche o PDF Old Ace e execute o arquivo baixado.'; }
+    catch (e) { $('#upd-res').textContent = 'Não foi possível abrir o navegador: ' + errMsg(e); }
+  };
+  $('#update-banner-x').onclick = () => { $('#update-banner').hidden = true; };
+  $('#update-banner-open').onclick = () => { $('#update-banner').hidden = true; $('#btn-settings').click(); };
+  if (getAuto()) setTimeout(() => check(false), 3000);
+})();

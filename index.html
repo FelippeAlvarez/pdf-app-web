@@ -24,6 +24,9 @@
   <button id="btn-settings" class="icon-btn" title="Configurações" aria-label="Configurações" aria-haspopup="dialog">⚙</button>
 </header>
 
+<div id="update-banner" class="banner warn" hidden role="status">
+  <span id="update-banner-text"></span> <button id="update-banner-open" type="button">Ver</button> <button id="update-banner-x" type="button" aria-label="Dispensar">✕</button>
+</div>
 <main>
 <!-- ===== Organizar e compactar ===== -->
 <section id="tab-org" class="panel active">
@@ -154,7 +157,7 @@
 <section id="tab-manual" class="panel">
   <div class="card-box guide">
     <h2>Manual de uso — PDF Old Ace</h2>
-    <p class="hint">Versão <span id="manual-version">0.7.2</span>. Este manual descreve o que o aplicativo faz hoje, inclusive seus limites.</p>
+    <p class="hint">Versão <span id="manual-version">0.8.0</span>. Este manual descreve o que o aplicativo faz hoje, inclusive seus limites.</p>
     <nav class="toc" aria-label="Índice do manual">
       <a href="#m-visao">1. Visão geral</a>
       <a href="#m-abrir">2. Abrir e juntar PDFs</a>
@@ -274,7 +277,7 @@
     <ul>
       <li><strong>Windows:</strong> instale pelo instalador do programa. Funciona sem internet.</li>
       <li><strong>Navegador:</strong> abra o endereço do site uma vez com internet. Instale pelo botão <em>Instalar</em> (ou pelo menu do navegador, “Adicionar à tela inicial” / “Instalar app”). Depois disso o app abre e funciona sem conexão, inclusive o OCR.</li>
-      <li><strong>Atualização:</strong> a versão do navegador se atualiza sozinha quando há internet; pode ser preciso fechar e abrir o app, ou recarregar a página duas vezes, para ver a versão nova.</li>
+      <li><strong>Atualização:</strong> no Windows, o app avisa (ao abrir, se você deixar ligado, ou em Configurações, Atualização) quando há versão nova; o botão <em>Baixar o instalador</em> baixa o instalador pelo navegador e você o executa por cima da versão instalada. Cada pessoa precisa fazer isso. A versão do navegador se atualiza sozinha quando há internet; pode ser preciso fechar e abrir o app, ou recarregar a página duas vezes, para ver a versão nova.</li>
     </ul>
 
     <h3 id="m-atalhos">11. Atalhos (teclado, na aba Organizar)</h3>
@@ -318,7 +321,7 @@
   <div class="card-box about">
     <h2>PDF Old Ace</h2>
     <dl>
-      <dt>Versão</dt><dd id="app-version">0.7.2</dd>
+      <dt>Versão</dt><dd id="app-version">0.8.0</dd>
       <dt>Copyright</dt><dd>© 2026 Felippe Alvarez. Todos os direitos reservados.</dd>
       <dt>Licença do aplicativo</dt><dd>Licença de uso proprietária, de uso restrito (minuta abaixo). Titular: Felippe Alvarez.</dd>
       <dt>Contato / suporte</dt><dd><span class="pending">Pendente</span> — informar e-mail ou canal de suporte.</dd>
@@ -355,6 +358,7 @@
       <ol>
         <li>O processamento é feito no próprio aparelho. Os arquivos PDF e os textos extraídos não são enviados a servidores.</li>
         <li>O programa não coleta estatísticas de uso nem usa rastreadores.</li>
+        <li>Na versão para Windows, o programa consulta, ao abrir (se você não desligar em Configurações) ou quando você pedir, um arquivo de versão no site do PDF Old Ace (GitHub Pages), apenas para saber se há versão nova. Nenhum arquivo ou dado seu é enviado; o serviço de hospedagem pode registrar o acesso (como o endereço IP). O download do instalador é feito pelo navegador, em github.com.</li>
         <li>Ficam guardados apenas no aparelho as preferências (inclusive a paleta de cores escolhida) e a lista de padrões de alerta (armazenamento local do programa/navegador).</li>
         <li>Na versão para navegador, o carregamento inicial do site e das atualizações é feito pelo serviço de hospedagem (GitHub Pages), que pode registrar o acesso (como o endereço IP). Depois de instalada, a versão para navegador funciona sem conexão.</li>
         <li>Os arquivos gerados (.md, .txt, .json) contêm o texto do documento; protegê-los é responsabilidade do usuário, inclusive antes de enviá-los a qualquer serviço de IA.</li>
@@ -363,6 +367,7 @@
     <details class="manual">
       <summary><strong>Histórico de versões</strong></summary>
       <p class="hint">Critério: MAJOR.MINOR.PATCH. O primeiro número fica em 0 durante os testes; o segundo sobe com função nova; o terceiro, com correções e ajustes. Toda entrega publicada sobe a versão.</p>
+      <p><strong>0.8.0</strong> — Windows: aviso de versão nova e botão para baixar o instalador (Configurações, Atualização), com opção de desligar a verificação ao abrir.</p>
       <p><strong>0.7.2</strong> — correção: PDFs de alguns scanners (com espaço ou tabulação antes de <code>endstream</code>) saíam com páginas em branco; agora são lidos corretamente.</p>
       <p><strong>0.7.1</strong> — PDF/A: comparação visual com o original antes de entregar e aviso quando uma página do original tem conteúdo ilegível (sairia em branco).</p>
       <p><strong>0.7.0</strong> — conversão para PDF/A-2b (fontes embutidas, sem criptografia, scripts e anexos, perfil de cor e metadados), com conversão opcional de páginas em imagem, aviso antes de remover proteção do arquivo e autoverificação; fontes Liberation (SIL OFL) e perfil sRGB incluídos.</p>
@@ -405,10 +410,23 @@
     <p class="pal-h">Claras</p><div id="pal-claras" class="pal" role="radiogroup" aria-label="Paletas claras"></div>
     <p class="pal-h">Escuras</p><div id="pal-escuras" class="pal" role="radiogroup" aria-label="Paletas escuras"></div>
     <p class="pal-h">Alto contraste</p><div id="pal-alto" class="pal" role="radiogroup" aria-label="Paletas de alto contraste"></div>
+    <div id="upd-sec" hidden>
+      <h3>Atualização</h3>
+      <p class="hint">Versão instalada: <strong id="upd-cur"></strong>. O app consulta um arquivo de versão no site do PDF Old Ace (só o número da versão; nenhum arquivo seu é enviado). Precisa de internet; o uso do app continua sem internet.</p>
+      <label class="check"><input type="checkbox" id="upd-auto"> Verificar ao abrir o app</label>
+      <div class="row"><button id="upd-check" type="button">Verificar atualização</button></div>
+      <div id="upd-res" class="hint" role="status"></div>
+      <div id="upd-new" hidden>
+        <ul id="upd-notes"></ul>
+        <div class="row"><button id="upd-dl" type="button" class="primary">Baixar o instalador</button></div>
+        <p class="hint">Este botão <strong>baixa o instalador</strong> pelo navegador (<span id="upd-size"></span>). Depois, feche o PDF Old Ace e execute o instalador: ele atualiza o app, sem apagar seus arquivos. O Windows pode avisar "editor desconhecido": use "Mais informações" e "Executar assim mesmo". <span id="upd-hash"></span></p>
+      </div>
+    </div>
     <h3>Mais</h3>
     <div class="row"><button id="settings-about" type="button">Manual de uso</button></div>
   </div>
 </div>
+<script src="update.js"></script>
 <script src="ocr/tesseract.min.js"></script>
 <script src="bridge.js"></script>
 <script src="app.js"></script>
