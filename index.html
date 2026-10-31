@@ -154,7 +154,7 @@
 <section id="tab-manual" class="panel">
   <div class="card-box guide">
     <h2>Manual de uso — PDF Old Ace</h2>
-    <p class="hint">Versão <span id="manual-version">0.7.0</span>. Este manual descreve o que o aplicativo faz hoje, inclusive seus limites.</p>
+    <p class="hint">Versão <span id="manual-version">0.7.1</span>. Este manual descreve o que o aplicativo faz hoje, inclusive seus limites.</p>
     <nav class="toc" aria-label="Índice do manual">
       <a href="#m-visao">1. Visão geral</a>
       <a href="#m-abrir">2. Abrir e juntar PDFs</a>
@@ -179,7 +179,7 @@
       <li><strong>Dividir:</strong> separar em partes de até um tamanho máximo (pode ser combinado com a compactação).</li>
       <li><strong>Extrair texto para IA:</strong> gerar um arquivo de texto (.md, .txt, .json) com relatório de integridade, conteúdo oculto, imagens e alertas.</li>
     </ul>
-    <p>O arquivo original nunca é alterado: o resultado é sempre gravado como um arquivo novo. O app <strong>não</strong> assina, não converte para PDF/A nem para Word ou Excel.</p>
+    <p>O arquivo original nunca é alterado: o resultado é sempre gravado como um arquivo novo. O app <strong>não</strong> assina e não converte para Word ou Excel (converte para PDF/A, ver seção 5).</p>
 
     <h3 id="m-abrir">2. Abrir e juntar PDFs</h3>
     <ol>
@@ -222,7 +222,7 @@
       <li><strong>Arquivo protegido:</strong> o PDF/A não admite criptografia. Se o arquivo tiver proteção (por exemplo, restrição de edição ou de cópia), o app avisa antes de prosseguir e a remove <em>no arquivo gerado</em>; o original não é alterado. Faça isso apenas com documentos que você tem o direito de alterar.</li>
       <li><strong>Assinatura digital:</strong> o app não assina e não processa arquivo já assinado. Converta primeiro e assine depois, em outro programa. Qualquer alteração depois da assinatura, inclusive neste app, a invalida (e o PDF/A deixa de valer como foi entregue).</li>
       <li><strong>Com compactar e dividir:</strong> a conversão vem antes; cada parte da divisão é um PDF/A completo. As fontes embutidas aumentam o arquivo (da ordem de 15 KB por tipo de letra usado), o que conta para o limite de tamanho das partes.</li>
-      <li><strong>Autoverificação, não validação oficial:</strong> ao terminar, o app mostra o que conferiu (fontes, perfil de cor, metadados, ausência de criptografia, scripts e anexos). Isso não substitui um validador como o veraPDF, que pode apontar problemas que o app não detecta. A palavra final é do cartório ou sistema que receber o arquivo.</li>
+      <li><strong>Autoverificação, não validação oficial:</strong> ao terminar, o app mostra o que conferiu (fontes, perfil de cor, metadados, ausência de criptografia, scripts e anexos). Isso não substitui um validador como o veraPDF, que pode apontar problemas que o app não detecta. A palavra final é do cartório ou sistema que receber o arquivo. Também compara, página a página e em baixa resolução, o aspecto do original com o do arquivo gerado (em documentos longos, uma amostra de 30 páginas) e avisa se alguma página sair em branco ou muito diferente; e avisa quando o próprio original já tem página cujo conteúdo não pôde ser lido. A comparação não prova conformidade com o PDF/A e é pulada em arquivos muito grandes.</li>
       <li><strong>Versão do PDF/A:</strong> o app gera a parte 2, nível B. Confirme com o destino se ele aceita essa versão; se exigir outra, o app ainda não a oferece.</li>
     </ul>
 
@@ -318,7 +318,7 @@
   <div class="card-box about">
     <h2>PDF Old Ace</h2>
     <dl>
-      <dt>Versão</dt><dd id="app-version">0.7.0</dd>
+      <dt>Versão</dt><dd id="app-version">0.7.1</dd>
       <dt>Copyright</dt><dd>© 2026 Felippe Alvarez. Todos os direitos reservados.</dd>
       <dt>Licença do aplicativo</dt><dd>Licença de uso proprietária, de uso restrito (minuta abaixo). Titular: Felippe Alvarez.</dd>
       <dt>Contato / suporte</dt><dd><span class="pending">Pendente</span> — informar e-mail ou canal de suporte.</dd>
@@ -363,6 +363,7 @@
     <details class="manual">
       <summary><strong>Histórico de versões</strong></summary>
       <p class="hint">Critério: MAJOR.MINOR.PATCH. O primeiro número fica em 0 durante os testes; o segundo sobe com função nova; o terceiro, com correções e ajustes. Toda entrega publicada sobe a versão.</p>
+      <p><strong>0.7.1</strong> — PDF/A: comparação visual com o original antes de entregar e aviso quando uma página do original tem conteúdo ilegível (sairia em branco).</p>
       <p><strong>0.7.0</strong> — conversão para PDF/A-2b (fontes embutidas, sem criptografia, scripts e anexos, perfil de cor e metadados), com conversão opcional de páginas em imagem, aviso antes de remover proteção do arquivo e autoverificação; fontes Liberation (SIL OFL) e perfil sRGB incluídos.</p>
       <p><strong>0.6.0</strong> — juntar vários PDFs; mover páginas por botões e com o dedo; links e formulários preservados; salvar em outro local e compartilhar; pasta de origem automática no Windows; novo nome e logo; aba Manual; layout para celular; licença de uso e licenças de terceiros.</p>
       <p><strong>0.5.0</strong> — nomes terminam em _OldAce; pasta de saída sugerida; paletas de cores; copyright 2026.</p>
