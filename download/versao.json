@@ -1,0 +1,12 @@
+{
+  "schema": 1,
+  "version": "0.10.0",
+  "published": "2026-11-12",
+  "url": "https://github.com/FelippeAlvarez/pdf-app-web/releases/download/v0.10.0/PDF-Old-Ace_0.10.0_x64-setup.exe",
+  "size_mb": 32.9,
+  "sha256": "498679fa15dfcc5f5b48f55a22f4375d5ee8fb5aa2f8c5d8bae4efbf7157e02f",
+  "notes": [
+    "Windows: o botão \"Baixar e instalar agora\" (Configurações, Atualização) baixa o instalador, confere o SHA-256 publicado no site, pergunta se pode atualizar, fecha o app, instala em modo silencioso e abre o app de novo. Não atualiza durante extração ou processamento. \"Só baixar pelo navegador\" continua como alternativa.",
+    "Correção: janelas de confirmação apareciam por trás da tela de Configurações; agora aparecem na frente."
+  ]
+}
