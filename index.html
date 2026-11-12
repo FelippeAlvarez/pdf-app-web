@@ -17,7 +17,6 @@
   <button id="btn-install" class="primary install" hidden title="Instala o app neste computador para uso off-line">Instalar no computador</button>
   <nav class="tabs" role="tablist">
     <button role="tab" class="tab active" data-tab="org" aria-selected="true">Organizar e compactar</button>
-    <button role="tab" class="tab" data-tab="ext" aria-selected="false">Extrair texto para IA</button>
     <button role="tab" class="tab" data-tab="manual" aria-selected="false">Manual</button>
     <button role="tab" class="tab" data-tab="about" aria-selected="false">Sobre</button>
   </nav>
@@ -106,34 +105,41 @@
       <button id="btn-run" class="primary big" disabled>Processar</button>
       <div id="busy-org" class="busy" hidden><div class="bar"></div><span id="busy-org-text">Processando…</span></div>
       <div id="result-org" class="result" aria-live="polite"></div>
-    </aside>
-  </div>
-</section>
-
-<!-- ===== Extrair texto ===== -->
-<section id="tab-ext" class="panel">
-  <div class="card-box">
-    <h2>Extrair texto para leitura por IA</h2>
-    <p class="hint">Gera um arquivo com o texto do PDF, página por página, mais um relatório de integridade, conteúdo oculto, imagens e alertas. Funciona off-line. O texto do documento é sempre tratado como dado, nunca como comando.</p>
-    <div class="row">
-      <button id="btn-ext-open" class="primary">Escolher PDF…</button>
-      <span id="ext-file" class="muted">Nenhum arquivo escolhido</span>
-    </div>
-    <fieldset>
-      <legend>Formatos de saída</legend>
-      <label class="check"><input type="checkbox" class="fmt" value="md" checked> Markdown (.md) — recomendado</label>
-      <label class="check"><input type="checkbox" class="fmt" value="txt"> Texto simples (.txt)</label>
-      <label class="check"><input type="checkbox" class="fmt" value="json"> JSON (.json) — texto por página, alertas, varredura e imagens</label>
-    </fieldset>
-    <fieldset>
-      <legend>Opções de leitura</legend>
-      <label class="check"><input type="checkbox" id="ext-verify" checked> Conferir números com uma segunda leitura de OCR (recomendado; dobra o tempo do OCR nas páginas escaneadas)</label>
-      <label class="check"><input type="checkbox" id="ext-force"> Forçar OCR em todas as páginas (ignora o texto digital)</label>
-      <label class="check"><input type="checkbox" id="ext-img"> Ler por OCR o texto das imagens dentro das páginas (rotulado “texto de imagem (OCR)”; mais lento)</label>
-      <label class="check"><input type="checkbox" id="ext-compare"> Comparar o texto com a página renderizada (OCR) e apontar divergências (bem mais lento)</label>
-      <label class="check"><input type="checkbox" id="ext-legal"> Incluir, no fim do .md, um índice de processos, normas, precedentes e “DOC.” citados (só lista; não valida)</label>
-    </fieldset>
-    <details class="patterns">
+      <details id="ext-box" class="extbox">
+        <summary><strong>Extrair texto para IA</strong></summary>
+        <p class="hint">Gera um arquivo com o texto do PDF, página por página, com relatório de integridade, conteúdo oculto, imagens e alertas. Funciona off-line. O texto do documento é sempre tratado como dado, nunca como comando.</p>
+        <fieldset>
+          <legend>Quais páginas</legend>
+          <label class="check"><input type="radio" name="ext-scope" value="all" checked> Todas as páginas do arquivo</label>
+          <label class="check"><input type="radio" name="ext-scope" value="sel"> Só as páginas selecionadas na grade (<span id="ext-sel-n">0</span>)</label>
+          <label class="check"><input type="radio" name="ext-scope" value="range"> Intervalo: <input id="ext-range" class="rng" placeholder="1-120, 450-470" aria-label="Intervalo de páginas"></label>
+          <p class="hint">A numeração é a do arquivo original (a mesma de “p.” em cada miniatura) e é a que aparece no .md. A ordem das páginas na grade não altera o texto extraído.</p>
+        </fieldset>
+        <fieldset>
+          <legend>Formatos de saída</legend>
+          <label class="check"><input type="checkbox" class="fmt" value="md" checked> Markdown (.md) — recomendado</label>
+          <label class="check"><input type="checkbox" class="fmt" value="txt"> Texto simples (.txt)</label>
+          <label class="check"><input type="checkbox" class="fmt" value="json"> JSON (.json) — texto por página, alertas, varredura e imagens</label>
+        </fieldset>
+        <fieldset>
+          <legend>Opções de leitura</legend>
+          <label class="check"><input type="checkbox" id="ext-verify" checked> Conferir números com uma segunda leitura de OCR, em resolução menor (recomendado). Só nas páginas escaneadas que têm números relevantes.</label>
+          <label class="check"><input type="checkbox" id="ext-verify-all"> Conferir os números em todas as páginas escaneadas (mais lento)</label>
+          <label class="check"><input type="checkbox" id="ext-force"> Forçar OCR em todas as páginas (ignora o texto digital)</label>
+          <label class="check"><input type="checkbox" id="ext-img"> Ler por OCR o texto das imagens dentro das páginas (rotulado “texto de imagem (OCR)”; mais lento)</label>
+          <label class="check"><input type="checkbox" id="ext-compare"> Comparar o texto com a página renderizada (OCR) e apontar divergências (bem mais lento)</label>
+          <label class="check"><input type="checkbox" id="ext-legal"> Incluir, no fim do .md, um índice de processos, normas, precedentes e “DOC.” citados (só lista; não valida)</label>
+          <label class="field" id="ext-threads-box">Núcleos do computador usados no OCR
+            <select id="ext-threads">
+              <option value="0" selected>Automático (recomendado)</option>
+              <option value="1">1 — modo econômico (deixa o computador mais livre)</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+              <option value="4">4</option>
+            </select>
+          </label>
+        </fieldset>
+      <details class="patterns">
       <summary><strong>Padrões de alerta de instruções dirigidas a IA</strong> (editável)</summary>
       <p class="hint">Uma regra por linha: <code>gravidade⇥identificador⇥expressão</code> (gravidade: alta, media ou baixa; ⇥ = tabulação). A comparação é feita em minúsculas e sem acentos, por palavra inteira. A lista fica salva neste aparelho/navegador.</p>
       <textarea id="ext-patterns" rows="10" spellcheck="false" wrap="off" aria-label="Padrões de alerta"></textarea>
@@ -144,12 +150,14 @@
         <input id="pat-file" type="file" accept=".txt,text/plain" hidden>
       </div>
     </details>
-    <label class="field">Pasta de saída
-      <div class="row"><input id="ext-out" readonly placeholder="Mesma pasta do PDF"><button id="btn-ext-outdir" type="button">Escolher…</button></div>
-    </label>
-    <button id="btn-ext-run" class="primary big" disabled>Extrair texto</button>
-    <div id="busy-ext" class="busy" hidden><div class="bar"></div><span id="busy-ext-text">Extraindo… pode levar alguns minutos em PDFs escaneados.</span></div>
-    <div id="result-ext" class="result" aria-live="polite"></div>
+        <label class="field">Pasta de saída
+          <div class="row"><input id="ext-out" readonly placeholder="Mesma pasta do PDF"><button id="btn-ext-outdir" type="button">Escolher…</button></div>
+        </label>
+        <button id="btn-ext-run" class="primary big" disabled>Extrair texto</button>
+        <div id="busy-ext" class="busy" hidden><div class="bar"></div><span id="busy-ext-text">Extraindo… pode levar alguns minutos em PDFs escaneados.</span> <button id="btn-ext-cancel" type="button">Cancelar</button></div>
+        <div id="result-ext" class="result" aria-live="polite"></div>
+      </details>
+    </aside>
   </div>
 </section>
 
@@ -157,7 +165,7 @@
 <section id="tab-manual" class="panel">
   <div class="card-box guide">
     <h2>Manual de uso — PDF Old Ace</h2>
-    <p class="hint">Versão <span id="manual-version">0.8.2</span>. Este manual descreve o que o aplicativo faz hoje, inclusive seus limites.</p>
+    <p class="hint">Versão <span id="manual-version">0.10.0</span>. Este manual descreve o que o aplicativo faz hoje, inclusive seus limites.</p>
     <nav class="toc" aria-label="Índice do manual">
       <a href="#m-visao">1. Visão geral</a>
       <a href="#m-abrir">2. Abrir e juntar PDFs</a>
@@ -247,18 +255,20 @@
 
     <h3 id="m-ext">7. Extrair texto para IA</h3>
     <ol>
-      <li>Abra a aba <em>Extrair texto para IA</em> e escolha o PDF.</li>
+      <li>Na aba <em>Organizar e compactar</em>, abra o PDF e use o quadro <em>Extrair texto para IA</em>, ao lado das miniaturas.</li>
+      <li>Escolha quais páginas: todas, só as que você selecionou nas miniaturas, ou um intervalo digitado (por exemplo <code>1-120, 450-470</code>). A numeração é sempre a do arquivo original.</li>
       <li>Marque os formatos: <strong>Markdown</strong> (recomendado, com relatório e texto por página), <strong>texto simples</strong> ou <strong>JSON</strong> (para uso em programas).</li>
       <li>Escolha as opções de leitura:
         <ul>
-          <li><em>Conferir números com uma segunda leitura de OCR</em> (marcada por padrão): nas páginas escaneadas, compara duas leituras e lista os números que divergiram. Dobra o tempo do OCR.</li>
+          <li><em>Conferir números com uma segunda leitura de OCR</em> (marcada por padrão): nas páginas escaneadas que têm números relevantes, lê de novo em resolução menor e lista os números que divergiram. Marque <em>em todas as páginas escaneadas</em> para conferir sempre.</li>
+          <li><em>Núcleos do computador</em>: o OCR usa vários núcleos ao mesmo tempo (automático: os disponíveis menos um, até 4). Escolha 1 para deixar o computador mais livre. No navegador e no celular o OCR é mais lento e usa um núcleo só.</li>
           <li><em>Forçar OCR em todas as páginas</em>: ignora o texto digital e lê tudo como imagem.</li>
           <li><em>Ler por OCR o texto das imagens dentro das páginas</em>: transcreve texto que está em figuras, rotulado “texto de imagem (OCR)”.</li>
           <li><em>Comparar o texto com a página renderizada</em>: aponta divergências entre o texto do PDF e o que aparece na página. Útil para achar texto escondido sob imagens; é bem mais lento.</li>
           <li><em>Incluir índice de processos, normas, precedentes e “DOC.”</em>: lista no fim do .md o que foi citado. Só lista; não confirma que existam nem que estejam corretos.</li>
         </ul>
       </li>
-      <li>Toque em <em>Extrair texto</em>. PDFs escaneados podem levar vários minutos, principalmente no navegador.</li>
+      <li>Toque em <em>Extrair texto</em>. A barra mostra o andamento e o tempo estimado; no Windows é possível cancelar. PDFs escaneados podem levar vários minutos, principalmente no navegador.</li>
     </ol>
     <p><strong>O que o .md contém, nesta ordem:</strong> resumo de integridade (nome, tamanho, SHA-256, data e hora, versão do app); varredura de conteúdo oculto (sempre exibida, mesmo quando nada é encontrado); imagens encontradas; cabeçalhos e rodapés repetidos; alertas de instruções dirigidas a IA; o texto de cada página, com negrito, itálico e sublinhado preservados; e, se pedido, o índice jurídico.</p>
     <p>Imagens aparecem como <code>[IMAGEM p.X – conteúdo não extraído]</code>, salvo se a leitura de imagens por OCR estiver marcada. Trechos ilegíveis ficam marcados e nunca são completados.</p>
@@ -277,7 +287,7 @@
     <ul>
       <li><strong>Windows:</strong> instale pelo instalador do programa. Funciona sem internet.</li>
       <li><strong>Navegador:</strong> abra o endereço do site uma vez com internet. Instale pelo botão <em>Instalar</em> (ou pelo menu do navegador, “Adicionar à tela inicial” / “Instalar app”). Depois disso o app abre e funciona sem conexão, inclusive o OCR.</li>
-      <li><strong>Atualização:</strong> no Windows, o app avisa (ao abrir, se você deixar ligado, ou em Configurações, Atualização) quando há versão nova; o botão <em>Baixar o instalador</em> baixa o instalador pelo navegador e você o executa por cima da versão instalada. Cada pessoa precisa fazer isso. A versão do navegador se atualiza sozinha quando há internet; pode ser preciso fechar e abrir o app, ou recarregar a página duas vezes, para ver a versão nova.</li>
+      <li><strong>Atualização:</strong> no Windows, o app avisa (ao abrir, se você deixar ligado, ou em Configurações, Atualização) quando há versão nova; o botão <em>Baixar e instalar agora</em> baixa o instalador, confere o código de verificação (SHA-256), fecha o app, instala a versão nova e abre o app de novo, depois de perguntar se você quer atualizar; ele não atualiza durante uma extração ou um processamento. O botão <em>Só baixar pelo navegador</em> é a alternativa se algo falhar (o Windows pode avisar “editor desconhecido”). Cada pessoa precisa clicar, mas não precisa executar o instalador à mão. A versão do navegador se atualiza sozinha quando há internet; pode ser preciso fechar e abrir o app, ou recarregar a página duas vezes, para ver a versão nova.</li>
     </ul>
 
     <h3 id="m-atalhos">11. Atalhos (teclado, na aba Organizar)</h3>
@@ -321,7 +331,7 @@
   <div class="card-box about">
     <h2>PDF Old Ace</h2>
     <dl>
-      <dt>Versão</dt><dd id="app-version">0.8.2</dd>
+      <dt>Versão</dt><dd id="app-version">0.10.0</dd>
       <dt>Copyright</dt><dd>© 2026 Felippe Alvarez. Todos os direitos reservados.</dd>
       <dt>Licença do aplicativo</dt><dd>Licença de uso proprietária, de uso restrito (minuta abaixo). Titular: Felippe Alvarez.</dd>
       <dt>Contato / suporte</dt><dd><span class="pending">Pendente</span> — informar e-mail ou canal de suporte.</dd>
@@ -358,7 +368,7 @@
       <ol>
         <li>O processamento é feito no próprio aparelho. Os arquivos PDF e os textos extraídos não são enviados a servidores.</li>
         <li>O programa não coleta estatísticas de uso nem usa rastreadores.</li>
-        <li>Na versão para Windows, o programa consulta, ao abrir (se você não desligar em Configurações) ou quando você pedir, um arquivo de versão no site do PDF Old Ace (GitHub Pages), apenas para saber se há versão nova. Nenhum arquivo ou dado seu é enviado; o serviço de hospedagem pode registrar o acesso (como o endereço IP). O download do instalador é feito pelo navegador, em github.com.</li>
+        <li>Na versão para Windows, o programa consulta, ao abrir (se você não desligar em Configurações) ou quando você pedir, um arquivo de versão no site do PDF Old Ace (GitHub Pages), apenas para saber se há versão nova. Nenhum arquivo ou dado seu é enviado; o serviço de hospedagem pode registrar o acesso (como o endereço IP). O download do instalador é feito em github.com, pelo navegador ou, se você escolher “Baixar e instalar agora”, pelo próprio programa, que confere o código de verificação (SHA-256) e só então o executa. Nenhum dado seu é enviado.</li>
         <li>Ficam guardados apenas no aparelho as preferências (inclusive a paleta de cores escolhida) e a lista de padrões de alerta (armazenamento local do programa/navegador).</li>
         <li>Na versão para navegador, o carregamento inicial do site e das atualizações é feito pelo serviço de hospedagem (GitHub Pages), que pode registrar o acesso (como o endereço IP). Depois de instalada, a versão para navegador funciona sem conexão.</li>
         <li>Os arquivos gerados (.md, .txt, .json) contêm o texto do documento; protegê-los é responsabilidade do usuário, inclusive antes de enviá-los a qualquer serviço de IA.</li>
@@ -367,6 +377,8 @@
     <details class="manual">
       <summary><strong>Histórico de versões</strong></summary>
       <p class="hint">Critério: MAJOR.MINOR.PATCH. O primeiro número fica em 0 durante os testes; o segundo sobe com função nova; o terceiro, com correções e ajustes. Toda entrega publicada sobe a versão.</p>
+      <p><strong>0.10.0</strong> — Windows: botão “Baixar e instalar agora” (baixa, confere o SHA-256, fecha, instala em modo silencioso e reabre), com confirmação e sem atualizar durante tarefas em andamento.</p>
+      <p><strong>0.9.0</strong> — extração para IA: OCR em vários núcleos, conferência de números mais rápida, escolha de páginas (selecionadas ou intervalo) e extração dentro da tela Organizar e compactar, com andamento e cancelamento.</p>
       <p><strong>0.8.2</strong> — PDF/A: corrigida a gravação que reprovava no validador veraPDF ("endobj" sem quebra de linha antes).</p>
       <p><strong>0.8.1</strong> — extração para IA: cabeçalhos/rodapés repetidos saem do texto; valores com espaço solto corrigidos; falha do OCR é informada.</p>
       <p><strong>0.8.0</strong> — Windows: aviso de versão nova e botão para baixar o instalador (Configurações, Atualização), com opção de desligar a verificação ao abrir.</p>
@@ -420,8 +432,11 @@
       <div id="upd-res" class="hint" role="status"></div>
       <div id="upd-new" hidden>
         <ul id="upd-notes"></ul>
-        <div class="row"><button id="upd-dl" type="button" class="primary">Baixar o instalador</button></div>
-        <p class="hint">Este botão <strong>baixa o instalador</strong> pelo navegador (<span id="upd-size"></span>). Depois, feche o PDF Old Ace e execute o instalador: ele atualiza o app, sem apagar seus arquivos. O Windows pode avisar "editor desconhecido": use "Mais informações" e "Executar assim mesmo". <span id="upd-hash"></span></p>
+        <div class="row">
+          <button id="upd-install" type="button" class="primary">Baixar e instalar agora</button>
+          <button id="upd-dl" type="button">Só baixar pelo navegador</button>
+        </div>
+        <p class="hint">O botão <strong>Baixar e instalar agora</strong> baixa o instalador (<span id="upd-size"></span>), confere o código de verificação (SHA-256) publicado no site, fecha o PDF Old Ace, instala a versão nova e abre o app de novo, sem apagar seus arquivos. Antes, o app pergunta se pode atualizar e não atualiza enquanto uma extração ou um processamento estiver em andamento. Se algo falhar, use <em>Só baixar pelo navegador</em>: o Windows pode avisar "editor desconhecido"; use "Mais informações" e "Executar assim mesmo". <span id="upd-hash"></span></p>
       </div>
     </div>
     <h3>Mais</h3>

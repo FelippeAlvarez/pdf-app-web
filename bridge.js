@@ -132,7 +132,7 @@
     const key = r.path;
     const opts = {
       force_ocr: !!r.force_ocr, verify_numbers: !!r.verify_numbers, ocr_images: !!r.ocr_images,
-      compare_ocr: !!r.compare_ocr, legal_index: !!r.legal_index,
+      compare_ocr: !!r.compare_ocr, legal_index: !!r.legal_index, pages: r.pages || null, verify_all: !!r.verify_all,
       alert_patterns: r.alert_patterns || null, timestamp: new Date().toISOString().replace('T', ' ').replace(/\.\d+Z$/, ' UTC'),
     };
     const plan = await call('plan', { key, opts });

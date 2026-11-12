@@ -66,7 +66,7 @@ legend{padding:0 6px;color:var(--muted);font-size:12px}
 .about dl{display:grid;grid-template-columns:170px 1fr;gap:6px 12px}.about dt{color:var(--muted)}.about dd{margin:0}
 .pending{background:var(--warn-bg);color:var(--warn-text);border-radius:3px;padding:0 5px;font-size:12px}
 .credits{padding-left:20px}
-.modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:10}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:60}
 .modal[hidden]{display:none}
 .dialog{background:var(--panel);border-radius:10px;padding:18px;width:min(520px,92vw);max-height:86vh;overflow:auto}
 .dialog h3{margin:0 0 8px}
@@ -135,5 +135,10 @@ button.on{background:var(--accent);color:var(--accent-text);border-color:var(--a
 .pdfa-box .ck-bad{font-weight:600;color:#b00020}
 :root[data-dark] .pdfa-box .ck-bad{color:#ff8a80}
 #pdfa-opts{margin:.2rem 0 .6rem 1.4rem}
+
+details.extbox{margin-top:16px;border-top:1px solid var(--line);padding-top:10px}
+details.extbox summary{cursor:pointer}
+input.rng{width:12em}
+#btn-ext-cancel{margin-left:8px}
 
 #btn-reveal,#btn-reveal2{display:none}

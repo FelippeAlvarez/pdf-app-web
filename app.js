@@ -39,6 +39,7 @@ function modal(title, bodyHtml, buttons) {
 }
 
 /* ---------- estado: organizar ---------- */
+let extOut = '', extOutManual = false, extPoll = null;
 const S = { sources: [], entries: [], sel: new Set(), last: null, hist: [], nextId: 1, thumbs: new Map(), outDir: '', busy: false };
 const key = (src, page) => src + ':' + page;
 
@@ -163,6 +164,7 @@ function render() {
   const hasSel = S.sel.size > 0;
   $$('#btn-rotl,#btn-rotr,#btn-dup,#btn-del,#btn-left,#btn-right,#btn-moveto').forEach(b => b.disabled = !hasSel);
   if (!has) $('#btn-undo').disabled = !S.hist.length;
+  refreshExt();
 }
 function clearDrop() { $$('.drop-before,.drop-after').forEach(x => x.classList.remove('drop-before', 'drop-after')); }
 
@@ -328,7 +330,7 @@ function toast(kind, text, target = '#result-org') {
 }
 function setBusy(which, on, text) {
   const b = $('#busy-' + which); b.hidden = !on; if (text) $('#busy-' + which + '-text').textContent = text;
-  S.busy = on; $('#btn-run').disabled = on || !S.entries.length; $('#btn-ext-run').disabled = on || !extPath;
+  S.busy = on; $('#btn-run').disabled = on || !S.entries.length; $('#btn-ext-run').disabled = on || !S.sources.length;
 }
 
 function buildRequest(onOversize, rasterOk) {
@@ -441,25 +443,68 @@ $('#btn-run').onclick = () => run().catch(e => { setBusy('org', false); toast('e
 
 /* ---------- extrair ---------- */
 window.addEventListener('pdfapp-progress', e => { const t = $('#busy-ext-text'); if (t) t.textContent = e.detail; });
-let extPath = null, extPassword = null, extOut = '', extOutManual = false;
-$('#btn-ext-open').onclick = async () => {
-  const f = await invoke('pick_files', { multiple: false }); if (!f || !f.length) return;
-  const got = await openWithPassword(f[0]).catch(e => { toast('err', errMsg(e), '#result-ext'); return null; });
-  if (!got) return;
-  extPath = f[0]; extPassword = got.password;
-  if (!IS_WEB && !extOutManual) { extOut = dirOf(f[0]); $('#ext-out').value = extOut; }
-  $('#ext-file').textContent = `${baseName(f[0])} — ${got.info.pages} página(s)`;
-  $('#btn-ext-run').disabled = false; $('#result-ext').innerHTML = '';
-};
+/* Qual arquivo e quais páginas (numeração do arquivo original) serão extraídos. */
+function extTarget() {
+  if (!S.sources.length) return { err: 'Abra um PDF primeiro.' };
+  const scope = (document.querySelector('input[name=ext-scope]:checked') || {}).value || 'all';
+  const selEntries = S.entries.filter(e => S.sel.has(e.id));
+  let si = 0;
+  if (scope === 'sel') {
+    if (!selEntries.length) return { err: 'Nenhuma página selecionada na grade. Selecione páginas ou escolha outra opção.' };
+    const srcs = [...new Set(selEntries.map(e => e.src))];
+    if (srcs.length > 1) return { err: 'A extração trabalha com um arquivo por vez. Selecione páginas de um só arquivo.' };
+    si = srcs[0];
+    return { si, pages: toRanges(selEntries.map(e => e.page)) };
+  }
+  if (S.sources.length > 1) {
+    const srcs = [...new Set(selEntries.map(e => e.src))];
+    if (srcs.length !== 1) return { err: 'Há mais de um arquivo aberto. Selecione ao menos uma página do arquivo que quer extrair (ou deixe só um arquivo aberto).' };
+    si = srcs[0];
+  }
+  if (scope === 'range') {
+    const t = $('#ext-range').value.trim();
+    if (!t) return { err: 'Digite o intervalo, por exemplo 1-120, 450-470.' };
+    return { si, pages: t };
+  }
+  return { si, pages: '' };
+}
+function toRanges(nums) {
+  const v = [...new Set(nums)].sort((a, b) => a - b); const out = [];
+  for (let i = 0; i < v.length;) { let j = i; while (j + 1 < v.length && v[j + 1] === v[j] + 1) j++; out.push(j > i ? `${v[i]}-${v[j]}` : `${v[i]}`); i = j + 1; }
+  return out.join(',');
+}
+function refreshExt() {
+  const n = $('#ext-sel-n'); if (n) n.textContent = S.sel.size;
+  const b = $('#btn-ext-run'); if (b && !S.busy) b.disabled = !S.sources.length;
+  if (!IS_WEB && !extOutManual && S.sources.length) { const o = dirOf(S.sources[0].path); extOut = o; $('#ext-out').value = o; }
+}
 $('#btn-ext-outdir').onclick = async () => { const d = await invoke('pick_folder', {}); if (d) { extOut = d; extOutManual = true; $('#ext-out').value = d; } };
+$('#ext-verify').addEventListener('change', () => { $('#ext-verify-all').disabled = !$('#ext-verify').checked; if (!$('#ext-verify').checked) $('#ext-verify-all').checked = false; });
+if (IS_WEB) { $('#ext-threads-box').hidden = true; $('#btn-ext-cancel').hidden = true; }
+const fmtDur = (s) => { s = Math.max(0, Math.round(s)); if (s < 90) return s + ' s'; const m = Math.round(s / 60); return m < 90 ? m + ' min' : Math.floor(m / 60) + ' h ' + String(m % 60).padStart(2, '0') + ' min'; };
+$('#btn-ext-cancel').onclick = async () => { $('#btn-ext-cancel').disabled = true; $('#busy-ext-text').textContent = 'Cancelando…'; try { await api('extract_cancel', {}); } catch (_) { /* nada a cancelar */ } };
 $('#btn-ext-run').onclick = async () => {
   const formats = $$('.fmt').filter(c => c.checked).map(c => c.value);
   if (!formats.length) { toast('err', 'Escolha ao menos um formato.', '#result-ext'); return; }
-  setBusy('ext', true); $('#result-ext').innerHTML = '';
+  const tg = extTarget(); if (tg.err) { toast('err', tg.err, '#result-ext'); return; }
+  const src = S.sources[tg.si];
+  setBusy('ext', true); $('#result-ext').innerHTML = ''; $('#btn-ext-cancel').disabled = false;
+  const t0 = Date.now();
+  if (!IS_WEB) {
+    extPoll = setInterval(async () => {
+      try {
+        const p = await api('extract_progress', {});
+        if (p && p.total > 0) {
+          const el = (Date.now() - t0) / 1000, eta = p.done > 0 ? el / p.done * (p.total - p.done) : null;
+          $('#busy-ext-text').textContent = `Extraindo: ${p.done} de ${p.total} página(s) (${Math.round(100 * p.done / p.total)}%)` + (eta != null && p.done < p.total ? ` — restam cerca de ${fmtDur(eta)}` : '');
+        }
+      } catch (_) { /* a consulta de andamento é só informativa */ }
+    }, 700);
+  }
   try {
-    const r = await api('extract', { path: extPath, password: extPassword, formats, force_ocr: $('#ext-force').checked, verify_numbers: $('#ext-verify').checked, ocr_images: $('#ext-img').checked, compare_ocr: $('#ext-compare').checked, legal_index: $('#ext-legal').checked, alert_patterns: currentPatterns(), out_dir: extOut || dirOf(extPath), tesseract_dir: null });
-    setBusy('ext', false); showExt(r);
-  } catch (e) { setBusy('ext', false); toast('err', errMsg(e), '#result-ext'); }
+    const r = await api('extract', { path: src.path, password: src.password, formats, force_ocr: $('#ext-force').checked, verify_numbers: $('#ext-verify').checked, verify_all: $('#ext-verify-all').checked, ocr_images: $('#ext-img').checked, compare_ocr: $('#ext-compare').checked, legal_index: $('#ext-legal').checked, pages: tg.pages || null, threads: parseInt($('#ext-threads').value, 10) || 0, alert_patterns: currentPatterns(), out_dir: extOut || dirOf(src.path), tesseract_dir: null });
+    clearInterval(extPoll); setBusy('ext', false); showExt(r);
+  } catch (e) { clearInterval(extPoll); setBusy('ext', false); toast('err', errMsg(e), '#result-ext'); }
 };
 // ---- padrões de alerta (editáveis; guardados no aparelho)
 let defaultPatterns = '';
@@ -591,6 +636,23 @@ function showExt(r) {
     if (!found) return;
     try { await invoke('open_download', { url: found.url }); $('#upd-res').textContent = 'O navegador foi aberto para baixar o instalador. Feche o PDF Old Ace e execute o arquivo baixado.'; }
     catch (e) { $('#upd-res').textContent = 'Não foi possível abrir o navegador: ' + errMsg(e); }
+  };
+  $('#upd-install').onclick = async () => {
+    if (!found) return;
+    if (S.busy) { $('#upd-res').textContent = 'Há um processamento ou uma extração em andamento. Espere terminar (ou cancele) e tente de novo.'; return; }
+    if (!found.sha256) { $('#upd-res').textContent = 'Esta versão não traz o código de verificação (SHA-256), então não pode ser instalada automaticamente. Use “Só baixar pelo navegador”.'; return; }
+    const ok = await modal('Atualizar o PDF Old Ace?',
+      '<p>O app vai baixar a versão <strong>' + esc(found.version) + '</strong>' + (found.sizeMb ? ' (cerca de ' + Math.round(found.sizeMb) + ' MB)' : '') + ', conferir o arquivo, <strong>fechar</strong>, instalar e abrir de novo.</p><p>Seus arquivos não são apagados. Salve ou termine o que estiver fazendo antes de continuar.</p>',
+      [{ label: 'Depois', value: 'no' }, { label: 'Atualizar agora', value: 'yes', primary: true }]);
+    if (ok.value !== 'yes') return;
+    if (S.busy) { $('#upd-res').textContent = 'Um processamento começou enquanto você decidia. Tente de novo quando terminar.'; return; }
+    $('#upd-install').disabled = true; $('#upd-dl').disabled = true;
+    $('#upd-res').textContent = 'Baixando e conferindo o instalador… o app vai fechar sozinho quando estiver pronto.';
+    try { await invoke('install_update', { url: found.url, sha256: found.sha256 }); }
+    catch (e) {
+      $('#upd-res').textContent = 'Não foi possível atualizar automaticamente: ' + errMsg(e) + ' Você pode usar “Só baixar pelo navegador”.';
+      $('#upd-install').disabled = false; $('#upd-dl').disabled = false;
+    }
   };
   $('#update-banner-x').onclick = () => { $('#update-banner').hidden = true; };
   $('#update-banner-open').onclick = () => { $('#update-banner').hidden = true; $('#btn-settings').click(); };
