@@ -7,6 +7,23 @@
 <link rel="stylesheet" href="style.css">
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#14171c">
+<meta name="description" content="Organize, comprima e divida PDFs; extração de texto para IA e conversão para PDF/A. Funciona no navegador e off-line.">
+<link rel="canonical" href="https://felippealvarez.github.io/pdf-app-web/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="PDF Old Ace">
+<meta property="og:locale" content="pt_BR">
+<meta property="og:title" content="PDF Old Ace">
+<meta property="og:description" content="Organize, comprima e divida PDFs; extração de texto para IA e conversão para PDF/A. Funciona no navegador e off-line.">
+<meta property="og:url" content="https://felippealvarez.github.io/pdf-app-web/">
+<meta property="og:image" content="https://felippealvarez.github.io/pdf-app-web/og-image.png">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="PDF Old Ace: logo em azul claro com o nome do aplicativo">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="PDF Old Ace">
+<meta name="twitter:description" content="Organize, comprima e divida PDFs; extração de texto para IA e conversão para PDF/A. Funciona no navegador e off-line.">
+<meta name="twitter:image" content="https://felippealvarez.github.io/pdf-app-web/og-image.png">
 <link rel="icon" href="icons/icon-192.png">
 <script src="palettes-data.js"></script>
 <script src="palettes.js"></script>
@@ -165,7 +182,7 @@
 <section id="tab-manual" class="panel">
   <div class="card-box guide">
     <h2>Manual de uso — PDF Old Ace</h2>
-    <p class="hint">Versão <span id="manual-version">0.10.0</span>. Este manual descreve o que o aplicativo faz hoje, inclusive seus limites.</p>
+    <p class="hint">Versão <span id="manual-version">0.11.0</span>. Este manual descreve o que o aplicativo faz hoje, inclusive seus limites.</p>
     <nav class="toc" aria-label="Índice do manual">
       <a href="#m-visao">1. Visão geral</a>
       <a href="#m-abrir">2. Abrir e juntar PDFs</a>
@@ -212,7 +229,7 @@
       <li><strong>◀ Mover e Mover ▶:</strong> andam uma posição para trás ou para a frente.</li>
       <li><strong>Mover para…:</strong> informe a nova posição da primeira página selecionada.</li>
     </ul>
-    <p><strong>Formulários e links.</strong> Os campos de formulário (com o texto já preenchido) e os links da página acompanham a página quando você reordena, junta ou divide. Links para outra página do mesmo arquivo continuam funcionando se a página de destino for mantida; se ela for excluída (ou, na divisão, ficar em outra parte), o link é removido (o app avisa quando a exclusão causa isso; ao dividir, a remoção é silenciosa). Ao duplicar uma página, a cópia mantém os links, mas não os campos de formulário.</p>
+    <p><strong>Formulários e links.</strong> Os campos de formulário (com o texto já preenchido) e os links da página acompanham a página quando você reordena, junta ou divide. Links para outra página do mesmo arquivo continuam funcionando se a página de destino for mantida; se ela for excluída (ou, na divisão, ficar em outra parte), o link é removido (o app avisa quantos links foram removidos, tanto ao excluir páginas quanto ao dividir). Ao duplicar uma página, a cópia mantém os links, mas não os campos de formulário.</p>
     <p><strong>Desfazer</strong> volta a última alteração (até 100 passos). Nada é gravado até você tocar em <em>Processar</em>.</p>
 
     <h3 id="m-comp">4. Compactar e dividir</h3>
@@ -331,9 +348,10 @@
   <div class="card-box about">
     <h2>PDF Old Ace</h2>
     <dl>
-      <dt>Versão</dt><dd id="app-version">0.10.0</dd>
+      <dt>Versão</dt><dd id="app-version">0.11.0</dd>
       <dt>Copyright</dt><dd>© 2026 Felippe Alvarez. Todos os direitos reservados.</dd>
       <dt>Licença do aplicativo</dt><dd>Licença de uso proprietária, de uso restrito (minuta abaixo). Titular: Felippe Alvarez.</dd>
+      <dt>Compartilhar</dt><dd><a href="#" id="share-link" class="quiet-link" title="Copia o endereço do app para enviar a quem você tem autorização de dar acesso">Copiar link do app</a> <span id="share-msg" class="hint" role="status"></span></dd>
       <dt>Contato / suporte</dt><dd><span class="pending">Pendente</span> — informar e-mail ou canal de suporte.</dd>
     </dl>
     <details class="manual">
@@ -377,6 +395,8 @@
     <details class="manual">
       <summary><strong>Histórico de versões</strong></summary>
       <p class="hint">Critério: MAJOR.MINOR.PATCH. O primeiro número fica em 0 durante os testes; o segundo sobe com função nova; o terceiro, com correções e ajustes. Toda entrega publicada sobe a versão.</p>
+      <p><strong>0.11.0</strong> — Link do app para compartilhar (aba Sobre) e prévia com imagem ao enviar o link por WhatsApp e redes.</p>
+      <p><strong>0.10.1</strong> — Ao dividir em partes, o app agora avisa quantos links internos (sumário, remissões) foram removidos por apontarem para páginas que ficaram em outra parte.</p>
       <p><strong>0.10.0</strong> — Windows: botão “Baixar e instalar agora” (baixa, confere o SHA-256, fecha, instala em modo silencioso e reabre), com confirmação e sem atualizar durante tarefas em andamento.</p>
       <p><strong>0.9.0</strong> — extração para IA: OCR em vários núcleos, conferência de números mais rápida, escolha de páginas (selecionadas ou intervalo) e extração dentro da tela Organizar e compactar, com andamento e cancelamento.</p>
       <p><strong>0.8.2</strong> — PDF/A: corrigida a gravação que reprovava no validador veraPDF ("endobj" sem quebra de linha antes).</p>

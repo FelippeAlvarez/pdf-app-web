@@ -658,3 +658,28 @@ function showExt(r) {
   $('#update-banner-open').onclick = () => { $('#update-banner').hidden = true; $('#btn-settings').click(); };
   if (getAuto()) setTimeout(() => check(false), 3000);
 })();
+
+
+// ---- compartilhar o link do app (aba Sobre) ----
+(function () {
+  const URL_APP = 'https://felippealvarez.github.io/pdf-app-web/';
+  const a = document.getElementById('share-link');
+  const msg = document.getElementById('share-msg');
+  if (!a) return;
+  const say = (t) => { if (msg) { msg.textContent = t; setTimeout(() => { msg.textContent = ''; }, 4000); } };
+  a.addEventListener('click', async (e) => {
+    e.preventDefault();
+    try {
+      if (navigator.share && /Android|iPhone|iPad/i.test(navigator.userAgent)) {
+        await navigator.share({ title: 'PDF Old Ace', text: 'PDF Old Ace', url: URL_APP });
+        return;
+      }
+    } catch (err) { if (err && err.name === 'AbortError') return; }
+    try {
+      await navigator.clipboard.writeText(URL_APP);
+      say('Link copiado.');
+    } catch (err) {
+      say('Copie este endereço: ' + URL_APP);
+    }
+  });
+})();

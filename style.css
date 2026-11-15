@@ -141,4 +141,6 @@ details.extbox summary{cursor:pointer}
 input.rng{width:12em}
 #btn-ext-cancel{margin-left:8px}
 
+.quiet-link{color:var(--muted);font-size:13px;text-decoration:underline dotted;cursor:pointer}.quiet-link:hover{color:var(--accent)}
+
 #btn-reveal,#btn-reveal2{display:none}
