@@ -30,6 +30,7 @@
       inp.click();
     });
   }
+  window.__oldAceDrop = (list) => { const out = []; for (const f of list) { const k = (++nfile) + '/' + f.name; files.set(k, f); out.push(k); } return out; };
   async function pickFolder() {
     if (!window.showDirectoryPicker) return null;
     try { const h = await window.showDirectoryPicker({ mode: 'readwrite' }); dirs.set(h.name, h); return h.name; } catch (_) { return null; }

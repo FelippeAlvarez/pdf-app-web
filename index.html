@@ -37,26 +37,26 @@
     <button role="tab" class="tab" data-tab="manual" aria-selected="false">Manual</button>
     <button role="tab" class="tab" data-tab="about" aria-selected="false">Sobre</button>
   </nav>
-  <button id="btn-settings" class="icon-btn" title="Configurações" aria-label="Configurações" aria-haspopup="dialog">⚙</button>
+  <button id="btn-settings" class="icon-btn" title="Configurações" aria-label="Configurações" aria-haspopup="dialog"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg></button>
 </header>
 
 <div id="update-banner" class="banner warn" hidden role="status">
-  <span id="update-banner-text"></span> <button id="update-banner-open" type="button">Ver</button> <button id="update-banner-x" type="button" aria-label="Dispensar">✕</button>
+  <span id="update-banner-text"></span> <button id="update-banner-open" type="button">Ver</button> <button id="update-banner-x" type="button" aria-label="Dispensar"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
 </div>
 <main>
 <!-- ===== Organizar e compactar ===== -->
 <section id="tab-org" class="panel active">
   <div class="toolbar" role="toolbar" aria-label="Ferramentas de páginas">
-    <button id="btn-open" class="primary" title="Escolha um ou mais PDFs; vários são reunidos em um só">Abrir PDF…</button>
-    <button id="btn-insert" disabled title="Acrescenta um ou mais PDFs depois da página selecionada (ou no fim)">Juntar PDFs…</button>
+    <button id="btn-open" class="primary" title="Escolha um ou mais PDFs; vários são reunidos em um só"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7a2 2 0 012-2h4l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H6a2 2 0 01-2-2z"/></svg> Abrir PDF…</button>
+    <button id="btn-insert" disabled title="Acrescenta um ou mais PDFs depois da página selecionada (ou no fim)"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg> Juntar PDFs…</button>
     <span class="sep"></span>
-    <button id="btn-rotl" disabled title="Girar à esquerda (L)">⟲ Girar</button>
-    <button id="btn-rotr" disabled title="Girar à direita (R)">Girar ⟳</button>
-    <button id="btn-dup" disabled title="Duplicar">Duplicar</button>
-    <button id="btn-del" disabled title="Excluir (Delete)">Excluir</button>
+    <button id="btn-rotl" disabled title="Girar à esquerda (L)"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 103-6.2M4 4v5h5"/></svg> Girar</button>
+    <button id="btn-rotr" disabled title="Girar à direita (R)">Girar <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 11-3-6.2M20 4v5h-5"/></svg></button>
+    <button id="btn-dup" disabled title="Duplicar"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 012-2h9"/></svg> Duplicar</button>
+    <button id="btn-del" disabled title="Excluir (Delete)"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13"/></svg> Excluir</button>
     <span class="sep"></span>
-    <button id="btn-left" disabled title="Mover a seleção uma posição para trás">◀ Mover</button>
-    <button id="btn-right" disabled title="Mover a seleção uma posição para frente">Mover ▶</button>
+    <button id="btn-left" disabled title="Mover a seleção uma posição para trás"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg> Mover</button>
+    <button id="btn-right" disabled title="Mover a seleção uma posição para frente">Mover <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
     <button id="btn-moveto" disabled title="Mover a seleção para uma posição">Mover para…</button>
     <span class="sep"></span>
     <button id="btn-multi" disabled aria-pressed="false" title="No celular: toque em várias páginas para selecioná-las">Seleção múltipla</button>
@@ -68,9 +68,23 @@
   <div id="banner-signed" class="banner warn" hidden>Este PDF possui assinatura digital. Qualquer alteração a invalida, por isso o app não o processa. Use o arquivo original, sem assinatura.</div>
   <div class="split">
     <div id="grid-wrap" class="grid-wrap">
-      <div id="empty" class="empty">
-        <p><strong>Nenhum PDF aberto.</strong></p>
-        <p>Clique em <em>Abrir PDF…</em> para ver as páginas. Escolha mais de um arquivo para juntá-los. Depois é possível girar, excluir, duplicar e mudar a ordem das páginas (arrastando, ou pelos botões Mover), e juntar outros PDFs.</p>
+      <div id="empty" class="empty home">
+        <div class="hero">
+          <span class="eyebrow">PDF leve, rápido e privado</span>
+          <h1>Seus PDFs, prontos em segundos.</h1>
+          <p class="lead">Organize páginas, comprima, divida por tamanho e extraia o texto para IA. Seus arquivos não saem do seu aparelho.</p>
+        </div>
+        <div id="dropzone" class="dropzone" tabindex="0" role="button" aria-label="Escolher arquivos PDF ou soltá-los aqui">
+          <span class="dz-ico"><svg class="ico lg" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7a2 2 0 012-2h4l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H6a2 2 0 01-2-2z"/></svg></span>
+          <strong>Arraste os PDFs aqui</strong>
+          <span class="muted">ou escolha no seu aparelho. Escolha mais de um arquivo para juntá-los.</span>
+          <button id="btn-empty-open" class="primary" type="button"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7a2 2 0 012-2h4l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H6a2 2 0 01-2-2z"/></svg> Escolher arquivos</button>
+        </div>
+        <div class="acards">
+          <button type="button" class="acard" data-intent="pages"><span class="ac-ico"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3" width="10" height="13" rx="2"/><path d="M8 20h10a2 2 0 002-2V8"/></svg></span><strong>Organizar páginas</strong><span>Exclua, gire e reordene páginas. Junte vários PDFs em um só.</span></button>
+          <button type="button" class="acard" data-intent="compress"><span class="ac-ico"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 14h6v6M20 10h-6V4M14 10l7-7M3 21l7-7"/></svg></span><strong>Comprimir e dividir</strong><span>Reduza o tamanho, divida por megabytes por parte e converta para PDF/A.</span></button>
+          <button type="button" class="acard" data-intent="extract"><span class="ac-ico"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h8l5 5v13H6z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></svg></span><strong>Extrair para IA</strong><span>Texto com OCR, alertas de instruções ocultas e cabeçalho de integridade.</span></button>
+        </div>
       </div>
       <div id="grid" class="grid" aria-label="Páginas do documento"></div>
     </div>
@@ -182,7 +196,7 @@
 <section id="tab-manual" class="panel">
   <div class="card-box guide">
     <h2>Manual de uso — PDF Old Ace</h2>
-    <p class="hint">Versão <span id="manual-version">0.11.1</span>. Este manual descreve o que o aplicativo faz hoje, inclusive seus limites.</p>
+    <p class="hint">Versão <span id="manual-version">0.12.0</span>. Este manual descreve o que o aplicativo faz hoje, inclusive seus limites.</p>
     <nav class="toc" aria-label="Índice do manual">
       <a href="#m-visao">1. Visão geral</a>
       <a href="#m-abrir">2. Abrir e juntar PDFs</a>
@@ -211,7 +225,7 @@
 
     <h3 id="m-abrir">2. Abrir e juntar PDFs</h3>
     <ol>
-      <li>Na aba <em>Organizar e compactar</em>, toque em <em>Abrir PDF…</em> e escolha um ou mais arquivos. Se escolher vários, eles são reunidos em um só, na ordem em que foram escolhidos.</li>
+      <li>Na aba <em>Organizar e compactar</em>, toque em <em>Abrir PDF…</em> e escolha um ou mais arquivos. Se escolher vários, eles são reunidos em um só, na ordem em que foram escolhidos. Também é possível arrastar os PDFs para a tela (no navegador do computador; no Windows, se o arrastar não funcionar, use o botão) ou tocar em um dos três cartões da tela inicial: <em>Organizar páginas</em>, <em>Comprimir e dividir</em> e <em>Extrair para IA</em>. O cartão abre o seletor de arquivos e, depois, leva você direto à opção escolhida.</li>
       <li>Para acrescentar outros arquivos depois, selecione uma página e toque em <em>Juntar PDFs…</em>: os novos arquivos entram logo depois da página selecionada. Sem página selecionada, entram no fim.</li>
       <li>Quando há mais de um arquivo, aparece a lista <em>Arquivos reunidos</em>. Use ▲ e ▼ para mudar a ordem dos arquivos e ✕ para remover um arquivo inteiro. Atenção: ▲ e ▼ reagrupam as páginas por arquivo, desfazendo qualquer mistura de páginas que você tenha feito. O botão <em>Desfazer</em> volta ao estado anterior.</li>
       <li>Cada página mostra um número pequeno com o arquivo de origem quando há mais de um arquivo.</li>
@@ -346,13 +360,12 @@
 <!-- ===== Sobre ===== -->
 <section id="tab-about" class="panel">
   <div class="card-box about">
-    <h2>PDF Old Ace</h2>
+    <div class="about-head"><img class="app-icon" src="icon.png" width="58" height="58" alt=""><div><h2 class="brand-h"><span class="brand" aria-label="PDF Old Ace"><span class="b-pd">PD</span><span class="b-f">F Old Ace</span></span></h2><span class="muted">Versão <span id="app-version">0.12.0</span> · © 2026 Felippe Alvarez</span></div></div>
     <dl>
-      <dt>Versão</dt><dd id="app-version">0.11.1</dd>
-      <dt>Copyright</dt><dd>© 2026 Felippe Alvarez. Todos os direitos reservados.</dd>
+      <dt>Direitos</dt><dd>Todos os direitos reservados.</dd>
       <dt>Licença do aplicativo</dt><dd>Licença de uso proprietária, de uso restrito (minuta abaixo). Titular: Felippe Alvarez.</dd>
       <dt>Compartilhar</dt><dd><a href="#" id="share-link" class="quiet-link" title="Copia o endereço do app para enviar a quem você tem autorização de dar acesso">Copiar link do app</a> <span id="share-msg" class="hint" role="status"></span></dd>
-      <dt>Contato / suporte</dt><dd><span class="pending">Pendente</span> — informar e-mail ou canal de suporte.</dd>
+      <dt>Contato / suporte</dt><dd class="muted">Canal de suporte a definir.</dd>
     </dl>
     <details class="manual">
       <summary><strong>Licença de uso</strong> <span class="pending">minuta — revisar antes de distribuir</span></summary>
@@ -395,6 +408,7 @@
     <details class="manual">
       <summary><strong>Histórico de versões</strong></summary>
       <p class="hint">Critério: MAJOR.MINOR.PATCH. O primeiro número fica em 0 durante os testes; o segundo sobe com função nova; o terceiro, com correções e ajustes. Toda entrega publicada sobe a versão.</p>
+      <p><strong>0.12.0</strong> — Novo visual: tela inicial com área para soltar PDFs e cartões de ação; ícones no lugar de símbolos; miniaturas com sombra de papel e número em destaque; resultado com números e barra de economia; barra de andamento com porcentagem na extração; aba Sobre mais enxuta; cores padrão revistas (claro e escuro). As paletas escolhidas continuam valendo.</p>
       <p><strong>0.11.1</strong> — Correção visual na imagem de prévia do link (F vermelho no nome).</p>
       <p><strong>0.11.0</strong> — Link do app para compartilhar (aba Sobre) e prévia com imagem ao enviar o link por WhatsApp e redes.</p>
       <p><strong>0.10.1</strong> — Ao dividir em partes, o app agora avisa quantos links internos (sumário, remissões) foram removidos por apontarem para páginas que ficaram em outra parte.</p>
@@ -410,7 +424,8 @@
       <p><strong>0.5.0</strong> — nomes terminam em _OldAce; pasta de saída sugerida; paletas de cores; copyright 2026.</p>
       <p><strong>0.4.0</strong> — extração de texto para IA reescrita (layout, imagens, conteúdo oculto, alertas, conferência por OCR).</p>
     </details>
-    <h3>Créditos e licenças de componentes</h3>
+    <details class="manual">
+    <summary><strong>Créditos e licenças de componentes</strong></summary>
     <ul class="credits">
       <li><strong>Tauri</strong> (versão para Windows) — MIT / Apache-2.0</li>
       <li><strong>lopdf</strong> (leitura e escrita de PDF) — MIT</li>
@@ -422,6 +437,7 @@
       <li>Demais dependências em Rust, com licenças permissivas (MIT, Apache-2.0, BSD, Zlib e semelhantes; algumas, só no app Windows, em MPL-2.0). A lista completa, com os textos das licenças, está em <button type="button" id="btn-notices" class="linkish">Licenças de terceiros</button>. <span class="pending">Pendente: conferir as DLLs do Tesseract no instalador do Windows.</span></li>
     </ul>
     <pre id="notices" class="notices" hidden></pre>
+    </details>
     <h3>Manual de uso</h3>
     <p>O manual completo está na aba <a href="#" id="go-manual">Manual</a>.</p>
   </div>

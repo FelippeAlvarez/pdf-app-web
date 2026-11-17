@@ -12,6 +12,7 @@ const stem = p => baseName(p).replace(/\.pdf$/i, '');
 const oldAce = n => n.replace(/_OldAce$/i, '') + '_OldAce';
 const IS_WEB = !!window.PDF_OLD_ACE_WEB;
 const dirOf = p => p.slice(0, Math.max(p.lastIndexOf('\\'), p.lastIndexOf('/')));
+const CHECK = '<svg class="ico lg" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg>';
 const mb = b => b < 1048576 ? Math.max(1, Math.round(b / 1024)) + ' KB' : (b / 1048576).toFixed(2).replace('.', ',') + ' MB';
 const errMsg = e => (e && e.message) ? e.message : String(e);
 
@@ -83,15 +84,23 @@ async function addSource(path, insertAt /* índice na lista de entries ou null *
   return news.length;
 }
 
-async function onOpen() {
-  const files = await invoke('pick_files', { multiple: true }); if (!files || !files.length) return;
+let pendingIntent = null;
+function applyIntent(it) {
+  if (!it || it === 'pages') return;
+  if (it === 'compress') { const c = $('#compress'); c.scrollIntoView({ block: 'center', behavior: 'smooth' }); c.focus({ preventScroll: true }); }
+  if (it === 'extract') { const d = $('#ext-box'); d.open = true; d.scrollIntoView({ block: 'start', behavior: 'smooth' }); }
+}
+async function onOpen(given) {
+  const intent = pendingIntent; pendingIntent = null;
+  const files = given || await invoke('pick_files', { multiple: true }); if (!files || !files.length) return;
   S.sources = []; S.entries = []; S.sel.clear(); S.hist = []; S.thumbs.clear(); $('#btn-undo').disabled = true; $('#result-org').innerHTML = '';
   let ok = 0;
   for (const f of files) { if (await addSource(f, null)) ok++; }
   if (ok > 1) toast('ok', ok + ' arquivos reunidos. Ajuste a ordem dos arquivos ou das páginas e clique em Processar.');
+  if (ok) applyIntent(intent);
 }
-async function onInsert() {
-  const files = await invoke('pick_files', { multiple: true }); if (!files || !files.length) return;
+async function onInsert(given) {
+  const files = given || await invoke('pick_files', { multiple: true }); if (!files || !files.length) return;
   snapshot();
   const selIdx = S.entries.map((e, i) => S.sel.has(e.id) ? i : -1).filter(i => i >= 0);
   let at = selIdx.length ? Math.max(...selIdx) + 1 : S.entries.length;
@@ -191,7 +200,11 @@ function rotateSel(d) { if (!S.sel.size) return; snapshot(); S.entries.forEach(e
 function deleteSel() {
   if (!S.sel.size) return;
   if (S.sel.size >= S.entries.length) { toast('err', 'Não é possível excluir todas as páginas.'); return; }
-  snapshot(); S.entries = S.entries.filter(e => !S.sel.has(e.id)); S.sel.clear(); render();
+  const doIt = () => { snapshot(); S.entries = S.entries.filter(e => !S.sel.has(e.id)); S.sel.clear(); render(); };
+  const cards = $$('.pcard.sel');
+  if (!cards.length || (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) { doIt(); return; }
+  cards.forEach(c => c.classList.add('leaving'));
+  setTimeout(doIt, 190);
 }
 function dupSel() {
   if (!S.sel.size) return; snapshot();
@@ -308,6 +321,39 @@ $('#btn-dup').onclick = dupSel;
 $('#btn-del').onclick = deleteSel;
 $('#btn-undo').onclick = undo;
 $('#btn-all').onclick = () => { S.sel = (S.sel.size === S.entries.length) ? new Set() : new Set(S.entries.map(e => e.id)); render(); };
+/* ---------- tela inicial: escolher/soltar arquivos e cartões de ação ---------- */
+(function () {
+  const dz = $('#dropzone'); if (!dz) return;
+  const hasFiles = e => e.dataTransfer && [...(e.dataTransfer.types || [])].includes('Files');
+  const open = () => { pendingIntent = null; onOpen().catch(e => toast('err', errMsg(e))); };
+  dz.addEventListener('click', open);
+  dz.addEventListener('keydown', e => { if ((e.key === 'Enter' || e.key === ' ') && e.target === dz) { e.preventDefault(); open(); } });
+  $('#btn-empty-open').addEventListener('click', e => { e.stopPropagation(); open(); });
+  $$('.acard').forEach(b => b.addEventListener('click', () => { pendingIntent = b.dataset.intent; onOpen().catch(e => toast('err', errMsg(e))); }));
+  const accept = (keysOrPaths) => {
+    if (S.busy || !$('#tab-org').classList.contains('active') || !$('#modal').hidden) return;
+    const fn = S.entries.length ? onInsert : onOpen;
+    fn(keysOrPaths).catch(e => toast('err', errMsg(e)));
+  };
+  ['dragenter', 'dragover'].forEach(ev => window.addEventListener(ev, e => { if (hasFiles(e)) { e.preventDefault(); dz.classList.add('over'); } }));
+  window.addEventListener('dragleave', e => { if (!e.relatedTarget) dz.classList.remove('over'); });
+  window.addEventListener('drop', e => {
+    dz.classList.remove('over');
+    if (!hasFiles(e)) return;
+    e.preventDefault();
+    const fl = [...e.dataTransfer.files].filter(f => /\.pdf$/i.test(f.name) || f.type === 'application/pdf');
+    if (!fl.length) { toast('err', 'Solte arquivos PDF.'); return; }
+    if (window.__oldAceDrop) accept(window.__oldAceDrop(fl));
+  });
+  try { // Windows (Tauri): o sistema entrega os caminhos dos arquivos soltos
+    const ev = T && T.event;
+    if (ev && ev.listen) ev.listen('tauri://drag-drop', e => {
+      const paths = ((e && e.payload && e.payload.paths) || []).filter(x => /\.pdf$/i.test(x));
+      if (paths.length) accept(paths);
+    });
+  } catch (_) { /* sem suporte a soltar arquivos: o botão continua valendo */ }
+})();
+
 document.addEventListener('keydown', ev => {
   if (!$('#tab-org').classList.contains('active') || !$('#modal').hidden) return;
   if (ev.target.matches('input,select,textarea')) return;
@@ -432,8 +478,10 @@ function showDone(r) {
   const saved = r.original_bytes ? Math.round((1 - r.total_bytes / r.original_bytes) * 100) : 0;
   const rows = r.files.map(f => `<tr><td>${esc(f.name)}</td><td>${f.first_page}–${f.last_page}</td><td class="${f.oversize ? 'over' : ''}">${mb(f.bytes)}${f.oversize ? ' ⚠ acima do limite' : ''}</td></tr>`).join('');
   const warn = (r.warnings || []).map(w => `<div class="msg warn">${esc(w)}</div>`).join('') + pdfaBox(r.pdfa);
-  $('#result-org').innerHTML = `<div class="msg ok"><strong>Concluído.</strong> ${r.files.length} arquivo${r.files.length > 1 ? 's' : ''}, ${mb(r.total_bytes)} no total (original: ${mb(r.original_bytes)}${saved > 0 ? `, redução de ${saved}%` : ''}).` +
-    `${r.level_used ? ` Compactação: ${esc(r.level_used)}; ${r.images_recompressed} imagem(ns) recomprimida(s).` : ''}</div>` +
+  const stat = (b, l) => `<div class="stat"><b>${b}</b><span>${l}</span></div>`;
+  $('#result-org').innerHTML = `<div class="done-card"><div class="done-head"><span class="done-ok">${CHECK}</span><div><strong>Concluído.</strong><div class="muted">${r.files.length} arquivo${r.files.length > 1 ? 's' : ''}${r.level_used ? `; compactação ${esc(r.level_used)}, ${r.images_recompressed} imagem(ns) recomprimida(s)` : ''}</div></div></div>` +
+    `<div class="stats">${stat(r.files.length, r.files.length > 1 ? 'arquivos' : 'arquivo')}${stat(mb(r.original_bytes), 'original')}${stat(mb(r.total_bytes), 'final')}${saved > 0 ? stat('−' + saved + '%', 'economia') : ''}</div>` +
+    `${saved > 0 ? `<div class="savebar" role="img" aria-label="Redução de ${saved}%"><i style="width:${Math.min(100, saved)}%"></i></div>` : ''}</div>` +
     `<table><thead><tr><th>Arquivo</th><th>Págs.</th><th>Tamanho</th></tr></thead><tbody>${rows}</tbody></table>${warn}` +
     `<p><button id="btn-reveal">Mostrar na pasta</button></p><div id="out-org">${outputButtons(r.files)}</div>`;
   $('#btn-reveal').onclick = () => invoke('reveal', { path: r.files[0].path }).catch(() => { });
@@ -489,6 +537,7 @@ $('#btn-ext-run').onclick = async () => {
   const tg = extTarget(); if (tg.err) { toast('err', tg.err, '#result-ext'); return; }
   const src = S.sources[tg.si];
   setBusy('ext', true); $('#result-ext').innerHTML = ''; $('#btn-ext-cancel').disabled = false;
+  { const bar = $('#busy-ext .bar'); if (bar) { bar.classList.remove('det'); bar.style.removeProperty('--p'); } }
   const t0 = Date.now();
   if (!IS_WEB) {
     extPoll = setInterval(async () => {
@@ -496,6 +545,7 @@ $('#btn-ext-run').onclick = async () => {
         const p = await api('extract_progress', {});
         if (p && p.total > 0) {
           const el = (Date.now() - t0) / 1000, eta = p.done > 0 ? el / p.done * (p.total - p.done) : null;
+          const bar = $('#busy-ext .bar'); if (bar) { bar.classList.add('det'); bar.style.setProperty('--p', Math.round(100 * p.done / p.total) + '%'); }
           $('#busy-ext-text').textContent = `Extraindo: ${p.done} de ${p.total} página(s) (${Math.round(100 * p.done / p.total)}%)` + (eta != null && p.done < p.total ? ` — restam cerca de ${fmtDur(eta)}` : '');
         }
       } catch (_) { /* a consulta de andamento é só informativa */ }
@@ -548,7 +598,9 @@ function showExt(r) {
   const imgs = r.images ? `<div class="msg">${r.images} imagem(ns) incorporada(s) listada(s) no arquivo; nenhuma é omitida em silêncio.</div>` : '';
   const div = r.divergent_numbers ? `<div class="msg warn">${r.divergent_numbers} número(s) divergiram entre duas leituras de OCR e estão listados no arquivo. Confira-os no PDF original.</div>` : '';
   const ocrNote = r.ocr ? `<div class="msg warn">${r.ocr} página(s) foram lidas por OCR e podem conter erros em números, datas, valores e nomes. Confira no original antes de usar.</div>` : '';
-  $('#result-ext').innerHTML = `<div class="msg ok"><strong>Concluído.</strong> ${r.pages} página(s): ${r.digital} com texto digital, ${r.ocr} por OCR, ${r.empty} vazia(s)${conf}.</div>${alerts}${none}${perr}${hid}${imgs}${div}${ocrNote}` +
+  const st = (b, l) => `<div class="stat"><b>${b}</b><span>${l}</span></div>`;
+  $('#result-ext').innerHTML = `<div class="done-card"><div class="done-head"><span class="done-ok">${CHECK}</span><div><strong>Concluído.</strong><div class="muted">${r.pages} página(s): ${r.digital} com texto digital, ${r.ocr} por OCR, ${r.empty} vazia(s)${conf}.</div></div></div>` +
+    `<div class="stats">${st(r.pages, 'páginas')}${st(r.digital, 'texto digital')}${st(r.ocr, 'por OCR')}${st(r.empty, 'vazias')}</div></div>${alerts}${none}${perr}${hid}${imgs}${div}${ocrNote}` +
     `<table><thead><tr><th>Arquivo</th><th>Tamanho</th></tr></thead><tbody>${files}</tbody></table><p><button id="btn-reveal2">Mostrar na pasta</button></p><div id="out-ext">${outputButtons(r.files)}</div>`;
   $('#btn-reveal2').onclick = () => invoke('reveal', { path: r.files[0].path }).catch(() => { });
   wireOutputButtons($('#out-ext'), r.files);
